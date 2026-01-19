@@ -4,13 +4,12 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
-import { preferences } from '@vben/preferences';
 import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getUserInfoApi, loginApi, logoutApi } from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -33,42 +32,46 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { accessToken } = await loginApi(params);
+      const { status, data } = await loginApi(params);
+
+      console.log(status, data);
 
       // 如果成功获取到 accessToken
-      if (accessToken) {
+      if (status === 200) {
         // 将 accessToken 存储到 accessStore 中
-        accessStore.setAccessToken(accessToken);
-
-        // 获取用户信息并存储到 accessStore 中
-        const [fetchUserInfoResult, accessCodes] = await Promise.all([
-          fetchUserInfo(),
-          getAccessCodesApi(),
-        ]);
-
-        userInfo = fetchUserInfoResult;
-
-        userStore.setUserInfo(userInfo);
-        accessStore.setAccessCodes(accessCodes);
-
-        if (accessStore.loginExpired) {
-          accessStore.setLoginExpired(false);
-        } else {
-          onSuccess
-            ? await onSuccess?.()
-            : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
-              );
-        }
-
-        if (userInfo?.realName) {
-          ElNotification({
-            message: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
-            title: $t('authentication.loginSuccess'),
-            type: 'success',
-          });
-        }
+        accessStore.setAccessToken(data.token);
       }
+
+      userInfo = {
+        name: data.name,
+        email: data.email,
+        mobile: data.mobile,
+        token: data.token,
+      } as UserInfo;
+      userStore.setUserInfo(userInfo);
+      // accessStore.setAccessCodes(accessCodes);
+
+      if (accessStore.loginExpired) {
+        accessStore.setLoginExpired(false);
+      } else {
+        onSuccess
+          ? await onSuccess?.()
+          : await router.push(
+              // userInfo.homePath || preferences.app.defaultHomePath,
+              '/',
+            );
+      }
+
+      if (userInfo?.name) {
+        ElNotification({
+          message: `${$t('authentication.loginSuccessDesc')}:${'ddd'}`,
+          title: $t('authentication.loginSuccess'),
+          type: 'success',
+        });
+      }
+    } catch (error) {
+      // 建议加上 catch 块来捕获接口报错或赋值报错
+      console.error('Login Error:', error);
     } finally {
       loginLoading.value = false;
     }
