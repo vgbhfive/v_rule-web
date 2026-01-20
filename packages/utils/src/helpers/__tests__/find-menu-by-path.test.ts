@@ -5,7 +5,6 @@ import { findMenuByPath, findRootMenuByPath } from '../find-menu-by-path';
 // 示例菜单数据
 const menus: any[] = [
   { path: '/', children: [] },
-  { path: '/about', children: [] },
   {
     path: '/contact',
     children: [

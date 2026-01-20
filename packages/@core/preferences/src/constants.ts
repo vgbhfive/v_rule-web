@@ -110,6 +110,11 @@ const DEFAULT_TIME_ZONE_OPTIONS: TimezoneOption[] = [
     timezone: 'Asia/Seoul',
     label: 'Asia/Seoul(GMT+9)',
   },
+  {
+    offset: 5.5,
+    timezone: 'Asia/Kolkata',
+    label: 'Asia/Kolkata(GMT+5.5)',
+  },
 ];
 
 export const COLOR_PRESETS = [...BUILT_IN_THEME_PRESETS].slice(0, 7);

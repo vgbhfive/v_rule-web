@@ -1,12 +1,12 @@
 /**
  * @zh_CN GITHUB 仓库地址
  */
-export const VBEN_GITHUB_URL = 'https://github.com/vbenjs/vue-vben-admin';
+export const VGBHFIVE_GITHUB_URL = 'https://github.com/vgbhfive/v_rule-web';
 
 /**
  * @zh_CN 文档地址
  */
-export const VBEN_DOC_URL = 'https://doc.vben.pro';
+export const VGBHFIVE_DOC_URL = 'https://blog.vgbhfive.com';
 
 /**
  * @zh_CN Vben Logo

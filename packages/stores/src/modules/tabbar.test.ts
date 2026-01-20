@@ -151,12 +151,6 @@ describe('useAccessStore', () => {
       path: '/home',
     } as any);
     store.addTab({
-      fullPath: '/about',
-      meta: {},
-      name: 'About',
-      path: '/about',
-    } as any);
-    store.addTab({
       fullPath: '/contact',
       meta: {},
       name: 'Contact',
@@ -176,12 +170,6 @@ describe('useAccessStore', () => {
       meta: {},
       name: 'Home',
       path: '/home',
-    } as any);
-    store.addTab({
-      fullPath: '/about',
-      meta: {},
-      name: 'About',
-      path: '/about',
     } as any);
     const targetTab: any = {
       fullPath: '/contact',

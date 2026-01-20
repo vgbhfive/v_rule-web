@@ -32,21 +32,16 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { status, data } = await loginApi(params);
+      const { name, email, mobile, token } = await loginApi(params);
 
-      console.log(status, data);
-
-      // 如果成功获取到 accessToken
-      if (status === 200) {
-        // 将 accessToken 存储到 accessStore 中
-        accessStore.setAccessToken(data.token);
-      }
+      // 将 accessToken 存储到 accessStore 中
+      accessStore.setAccessToken(token);
 
       userInfo = {
-        name: data.name,
-        email: data.email,
-        mobile: data.mobile,
-        token: data.token,
+        name: name,
+        email: email,
+        mobile: mobile,
+        token: token,
       } as UserInfo;
       userStore.setUserInfo(userInfo);
       // accessStore.setAccessCodes(accessCodes);
@@ -64,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (userInfo?.name) {
         ElNotification({
-          message: `${$t('authentication.loginSuccessDesc')}:${'ddd'}`,
+          message: `${$t('authentication.loginSuccessDesc')}:${userInfo?.name}`,
           title: $t('authentication.loginSuccess'),
           type: 'success',
         });
