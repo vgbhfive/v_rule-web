@@ -9,7 +9,7 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getUserInfoApi, loginApi } from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -38,10 +38,11 @@ export const useAuthStore = defineStore('auth', () => {
       accessStore.setAccessToken(token);
 
       userInfo = {
-        name: name,
-        email: email,
-        mobile: mobile,
-        token: token,
+        name,
+        email,
+        mobile,
+        token,
+        roles: [],
       } as UserInfo;
       userStore.setUserInfo(userInfo);
       // accessStore.setAccessCodes(accessCodes);
@@ -77,11 +78,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(redirect: boolean = true) {
-    try {
-      await logoutApi();
-    } catch {
-      // 不做任何处理
-    }
     resetAllStores();
     accessStore.setLoginExpired(false);
 
