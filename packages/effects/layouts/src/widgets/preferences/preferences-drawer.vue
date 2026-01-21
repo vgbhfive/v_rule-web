@@ -44,7 +44,6 @@ import {
   Content,
   Copyright,
   FontSize,
-  Footer,
   General,
   GlobalShortcutKeys,
   Header,
@@ -67,8 +66,6 @@ const appLayout = defineModel<LayoutType>('appLayout');
 const appColorGrayMode = defineModel<boolean>('appColorGrayMode');
 const appColorWeakMode = defineModel<boolean>('appColorWeakMode');
 const appContentCompact = defineModel<ContentCompactType>('appContentCompact');
-const appWatermark = defineModel<boolean>('appWatermark');
-const appWatermarkContent = defineModel<string>('appWatermarkContent');
 const appEnableCheckUpdates = defineModel<boolean>('appEnableCheckUpdates');
 const appEnableStickyPreferencesNavigationBar = defineModel<boolean>(
   'appEnableStickyPreferencesNavigationBar',
@@ -136,11 +133,6 @@ const navigationAccordion = defineModel<boolean>('navigationAccordion');
 
 // const logoVisible = defineModel<boolean>('logoVisible');
 
-const footerEnable = defineModel<boolean>('footerEnable');
-const footerFixed = defineModel<boolean>('footerFixed');
-
-const copyrightSettingShow = defineModel<boolean>('copyrightSettingShow');
-const copyrightEnable = defineModel<boolean>('copyrightEnable');
 const copyrightCompanyName = defineModel<string>('copyrightCompanyName');
 const copyrightCompanySiteLink = defineModel<string>(
   'copyrightCompanySiteLink',
@@ -296,19 +288,25 @@ async function handleReset() {
             <Block :title="$t('preferences.general')">
               <General
                 v-model:app-dynamic-title="appDynamicTitle"
-                v-model:app-enable-check-updates="appEnableCheckUpdates"
                 v-model:app-locale="appLocale"
-                v-model:app-watermark="appWatermark"
-                v-model:app-watermark-content="appWatermarkContent"
               />
             </Block>
-
             <Block :title="$t('preferences.animation.title')">
               <Animation
                 v-model:transition-enable="transitionEnable"
                 v-model:transition-loading="transitionLoading"
                 v-model:transition-name="transitionName"
                 v-model:transition-progress="transitionProgress"
+              />
+            </Block>
+            <Block :title="$t('preferences.copyright.title')">
+              <Copyright
+                v-model:copyright-company-name="copyrightCompanyName"
+                v-model:copyright-company-site-link="copyrightCompanySiteLink"
+                v-model:copyright-date="copyrightDate"
+                v-model:copyright-icp="copyrightIcp"
+                v-model:copyright-icp-link="copyrightIcpLink"
+                :disabled="true"
               />
             </Block>
           </template>
@@ -422,26 +420,6 @@ async function handleReset() {
                 v-model:widget-refresh="widgetRefresh"
                 v-model:widget-sidebar-toggle="widgetSidebarToggle"
                 v-model:widget-theme-toggle="widgetThemeToggle"
-              />
-            </Block>
-            <Block :title="$t('preferences.footer.title')">
-              <Footer
-                v-model:footer-enable="footerEnable"
-                v-model:footer-fixed="footerFixed"
-              />
-            </Block>
-            <Block
-              v-if="copyrightSettingShow"
-              :title="$t('preferences.copyright.title')"
-            >
-              <Copyright
-                v-model:copyright-company-name="copyrightCompanyName"
-                v-model:copyright-company-site-link="copyrightCompanySiteLink"
-                v-model:copyright-date="copyrightDate"
-                v-model:copyright-enable="copyrightEnable"
-                v-model:copyright-icp="copyrightIcp"
-                v-model:copyright-icp-link="copyrightIcpLink"
-                :disabled="!footerEnable"
               />
             </Block>
           </template>

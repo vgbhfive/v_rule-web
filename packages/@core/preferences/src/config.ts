@@ -41,7 +41,7 @@ const defaultPreferences: Preferences = {
     styleType: 'normal',
   },
   copyright: {
-    companyName: 'v_rule',
+    companyName: '阡陌科技',
     companySiteLink: 'https://blog.vgbhfive.com',
     date: '2025',
     enable: true,
