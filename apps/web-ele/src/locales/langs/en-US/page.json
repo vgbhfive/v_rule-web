@@ -7,7 +7,11 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "analytics": "Analytics",
-    "workspace": "Workspace"
+    "analytics": "Analytics"
+  },
+  "system": {
+    "title": "System Management",
+    "line": "Line",
+    "scene": "Scene"
   }
 }
