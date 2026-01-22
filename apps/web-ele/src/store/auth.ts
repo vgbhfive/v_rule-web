@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
+import { preferences } from '@vben/preferences';
 import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 
 import { ElNotification } from 'element-plus';
@@ -52,22 +53,17 @@ export const useAuthStore = defineStore('auth', () => {
       } else {
         onSuccess
           ? await onSuccess?.()
-          : await router.push(
-              // userInfo.homePath || preferences.app.defaultHomePath,
-              '/',
-            );
+          : await router.push(preferences.app.defaultHomePath);
       }
 
       if (userInfo?.name) {
+        console.log(userInfo?.name);
         ElNotification({
           message: `${$t('authentication.loginSuccessDesc')}:${userInfo?.name}`,
           title: $t('authentication.loginSuccess'),
           type: 'success',
         });
       }
-    } catch (error) {
-      // 建议加上 catch 块来捕获接口报错或赋值报错
-      console.error('Login Error:', error);
     } finally {
       loginLoading.value = false;
     }

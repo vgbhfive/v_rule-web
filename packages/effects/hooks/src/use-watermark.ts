@@ -5,20 +5,8 @@ import { nextTick, onUnmounted, readonly, ref } from 'vue';
 const watermark = ref<Watermark>();
 const unmountedHooked = ref<boolean>(false);
 const cachedOptions = ref<Partial<WatermarkOptions>>({
-  advancedStyle: {
-    colorStops: [
-      {
-        color: 'gray',
-        offset: 0,
-      },
-      {
-        color: 'gray',
-        offset: 1,
-      },
-    ],
-    type: 'linear',
-  },
   // fontSize: '20px',
+  fontColor: '#D3D3D3',
   content: '',
   contentType: 'multi-line-text',
   globalAlpha: 0.25,
