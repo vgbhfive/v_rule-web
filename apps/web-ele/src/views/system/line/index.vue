@@ -1,7 +1,11 @@
 <script lang="ts" setup>
+import type { Recordable } from '@vben/types';
+
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
 
 import { Page } from '@vben/common-ui';
+
+import { ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -59,11 +63,11 @@ const [QueryForm] = useVbenForm({
   submitButtonOptions: {
     content: '查询',
   },
-  wrapperClass: 'grid-cols-1 md:grid-cols-2',
+  wrapperClass: 'grid-cols-3 grid-cols-4',
 });
 
 function onSubmit(values: Record<string, any>) {
-  console.log('form values:', JSON.stringify(values));
+  ElMessage.success(JSON.stringify(values));
 }
 
 // 数据实例
@@ -105,7 +109,7 @@ const sleep = (time = 1000) => {
 /**
  * 获取示例表格数据
  */
-async function getExampleTableApi(params: DemoTableApi.PageFetchParams) {
+async function getExampleTableApi(params: Recordable<any>) {
   return new Promise<{ items: any; total: number }>((resolve) => {
     const { page, pageSize } = params;
     const items = MOCK_TREE_TABLE_DATA.slice(
@@ -140,7 +144,7 @@ const gridOptions: VxeGridProps<RowType> = {
     { field: 'role', title: 'Role' },
     { field: 'address', showOverflow: true, title: 'Address' },
   ],
-  data: MOCK_TREE_TABLE_DATA,
+  data: [],
   pagerConfig: {
     enabled: true,
     pageSize: 10,
@@ -171,9 +175,9 @@ gridApi.setGridOptions({
 </script>
 
 <template>
-  <Page title="业务线管理">
+  <Page description="业务线管理">
     <div>
-      <div class="flex w-full">
+      <div class="flex">
         <QueryForm />
       </div>
       <div>

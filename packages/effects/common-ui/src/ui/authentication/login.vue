@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
   formSchema: () => [],
   loading: false,
   showCodeLogin: false,
-  showForgetPassword: false,
+  showForgetPassword: true,
   showQrcodeLogin: false,
   showRegister: false,
   showRememberMe: false,

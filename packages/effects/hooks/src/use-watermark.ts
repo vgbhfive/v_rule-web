@@ -6,7 +6,7 @@ const watermark = ref<Watermark>();
 const unmountedHooked = ref<boolean>(false);
 const cachedOptions = ref<Partial<WatermarkOptions>>({
   // fontSize: '20px',
-  fontColor: '#D3D3D3',
+  fontColor: '#C0C0C0', // D3D3D3
   content: '',
   contentType: 'multi-line-text',
   globalAlpha: 0.25,

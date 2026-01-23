@@ -18,6 +18,13 @@ export namespace AuthApi {
   export interface RefreshTokenResult {
     token: string;
   }
+
+  export interface ChangePasswordParams {
+    email: string;
+    oldPassword: string;
+    newPassword: string;
+    newDupPassword: string;
+  }
 }
 
 /**
@@ -44,4 +51,13 @@ export async function refreshTokenApi() {
  */
 export async function getAccessCodesApi() {
   return requestClient.get<string[]>('/auth/codes');
+}
+
+/**
+ * 修改用户密码
+ * @param data
+ * @returns
+ */
+export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
+  return requestClient.post('/user/changePassword', data);
 }

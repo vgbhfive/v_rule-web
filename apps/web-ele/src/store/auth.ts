@@ -10,7 +10,7 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getUserInfoApi, loginApi } from '#/api';
+import { changePasswordApi, getUserInfoApi, loginApi } from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -57,7 +57,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       if (userInfo?.name) {
-        console.log(userInfo?.name);
         ElNotification({
           message: `${$t('authentication.loginSuccessDesc')}:${userInfo?.name}`,
           title: $t('authentication.loginSuccess'),
@@ -95,6 +94,10 @@ export const useAuthStore = defineStore('auth', () => {
     return userInfo;
   }
 
+  async function changePassword(params: Recordable<any>) {
+    await changePasswordApi(params);
+  }
+
   function $reset() {
     loginLoading.value = false;
   }
@@ -104,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
     authLogin,
     fetchUserInfo,
     loginLoading,
+    changePassword,
     logout,
   };
 });

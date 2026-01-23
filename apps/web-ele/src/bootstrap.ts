@@ -5,7 +5,6 @@ import { registerLoadingDirective } from '@vben/common-ui';
 import { preferences } from '@vben/preferences';
 import { initStores } from '@vben/stores';
 import '@vben/styles';
-import '@vben/styles/ele';
 
 import { useTitle } from '@vueuse/core';
 import { ElLoading } from 'element-plus';
@@ -16,6 +15,8 @@ import { initComponentAdapter } from './adapter/component';
 import { initSetupVbenForm } from './adapter/form';
 import App from './app.vue';
 import { router } from './router';
+
+import 'element-plus/dist/index.css';
 
 async function bootstrap(namespace: string) {
   // 初始化组件适配器

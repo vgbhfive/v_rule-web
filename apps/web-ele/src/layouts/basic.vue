@@ -23,14 +23,14 @@ import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
 const notifications = ref<NotificationItem[]>([
-  // {
-  //   id: 1,
-  //   avatar: 'https://avatar.vercel.sh/vercel.svg?text=VB',
-  //   date: '3小时前',
-  //   isRead: true,
-  //   message: '描述信息描述信息描述信息',
-  //   title: '收到了 14 份新周报',
-  // },
+  {
+    id: 1,
+    avatar: 'https://avatar.vercel.sh/vercel.svg?text=VB',
+    date: '3小时前',
+    isRead: true,
+    message: '描述信息描述信息描述信息',
+    title: '收到了 14 份新周报',
+  },
 ]);
 
 const router = useRouter();
