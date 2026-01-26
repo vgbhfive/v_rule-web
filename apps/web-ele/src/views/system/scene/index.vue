@@ -254,7 +254,7 @@ async function handleSaveEdit(values: any) {
     // 调用更新API
     // await updateScene(currentEditingId.value, updateData);
 
-    ElMessage.success('场景更新成功' + updateData);
+    ElMessage.success(`场景更新成功${updateData}`);
 
     // 关闭弹窗
     editDrawerVisible.value = false;
