@@ -1,8 +1,14 @@
 import type { VxeTableGridOptions } from '@vben/plugins/vxe-table';
+import type { Recordable } from '@vben/types';
+
+import type { ComponentType } from './component';
 
 import { h } from 'vue';
 
-import { setupVbenVxeTable, useVbenVxeGrid } from '@vben/plugins/vxe-table';
+import {
+  setupVbenVxeTable,
+  useVbenVxeGrid as useGrid,
+} from '@vben/plugins/vxe-table';
 
 import { ElButton, ElImage } from 'element-plus';
 
@@ -25,9 +31,9 @@ setupVbenVxeTable({
         proxyConfig: {
           autoLoad: true,
           response: {
-            result: 'items',
-            total: 'total',
-            list: 'items',
+            result: 'dataList',
+            total: 'totalCount',
+            list: 'dataList',
           },
           showActiveMsg: true,
           showResponseMsg: false,
@@ -62,10 +68,87 @@ setupVbenVxeTable({
 
     // 这里可以自行扩展 vxe-table 的全局配置，比如自定义格式化
     // vxeUI.formats.add
+
+    vxeUI.renderer.add('CellOperation', {
+      renderTableDefault(renderOpts, params) {
+        const { props } = renderOpts;
+        const { row } = params;
+
+        const buttons = [];
+
+        if (props?.onEdit) {
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'primary',
+                size: 'small',
+                onClick: () => props?.onEdit?.(row),
+              },
+              { default: () => '编辑' },
+            ),
+          );
+        }
+
+        if (props?.onInfo) {
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'danger',
+                size: 'small',
+                onClick: () => props?.onInfo?.(row),
+              },
+              { default: () => '详情' },
+            ),
+          );
+        }
+
+        if (props?.onValid) {
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'danger',
+                size: 'small',
+                onClick: () => props?.onValid?.(row),
+              },
+              { default: () => '生效' },
+            ),
+          );
+        }
+
+        if (props?.onInvalid) {
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'danger',
+                size: 'small',
+                onClick: () => props?.onInvalid?.(row),
+              },
+              { default: () => '失效' },
+            ),
+          );
+        }
+
+        return h('div', { class: 'flex gap-2' }, buttons);
+      },
+    });
   },
   useVbenForm,
 });
 
-export { useVbenVxeGrid };
+export const useVbenVxeGrid = <T extends Record<string, any>>(
+  ...rest: Parameters<typeof useGrid<T, ComponentType>>
+) => useGrid<T, ComponentType>(...rest);
+
+export type OnActionClickParams<T = Recordable<any>> = {
+  code: string;
+  row: T;
+};
+export type OnActionClickFn<T = Recordable<any>> = (
+  params: OnActionClickParams<T>,
+) => void;
 
 export type * from '@vben/plugins/vxe-table';

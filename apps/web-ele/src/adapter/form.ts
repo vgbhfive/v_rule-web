@@ -11,8 +11,13 @@ import { $t } from '@vben/locales';
 async function initSetupVbenForm() {
   setupVbenForm<ComponentType>({
     config: {
+      // ant design vue组件库默认都是 v-model:value
+      baseModelPropName: 'value',
       modelPropNameMap: {
         Upload: 'fileList',
+        Checkbox: 'checked',
+        Radio: 'checked',
+        Switch: 'checked',
         CheckboxGroup: 'model-value',
       },
     },
