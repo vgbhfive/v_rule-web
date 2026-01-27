@@ -11,9 +11,22 @@ export interface LineInfo {
   createAt: string;
 }
 
+export interface LineDropdown {
+  key: string;
+  value: string;
+}
+
 /**
  * 获取业务线列表
  */
 export async function getLineList(params: Recordable<any>) {
   return requestClient.get<LineInfo[]>('/line/list', { params });
+}
+
+/**
+ * 获取业务线下拉列表
+ * @returns
+ */
+export async function getLineDropdownList() {
+  return requestClient.get<LineDropdown[]>('/line/dropdown/list');
 }

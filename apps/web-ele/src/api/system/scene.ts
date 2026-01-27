@@ -2,9 +2,10 @@ import { requestClient } from '#/api/request';
 
 export interface SceneInfo {
   id: number;
+  lineNo: string;
   sceneName: string;
-  sceneCode: string;
-  description: string;
+  sceneNo: string;
+  field: string;
   isValid: number;
   createAt: string;
   updateAt: string;
@@ -24,7 +25,7 @@ export interface SceneParams {
 export async function getSceneList(param: SceneParams) {
   return requestClient.post<{ items: SceneInfo[]; total: number }>(
     '/scene/list',
-    { param },
+    param,
   );
 }
 
