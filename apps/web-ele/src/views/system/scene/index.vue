@@ -17,13 +17,11 @@ const lineOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
   const list = await getLineDropdownList();
-  lineMap.value = list.reduce(
-    (acc, cur) => {
-      acc[cur.value] = cur.key;
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
+  const newMap: Record<string, string> = {};
+  for (const item of list) {
+    newMap[item.value] = item.key;
+  }
+  lineMap.value = newMap;
   lineOptions.value = list.map((item) => ({
     label: item.key,
     value: item.value,
