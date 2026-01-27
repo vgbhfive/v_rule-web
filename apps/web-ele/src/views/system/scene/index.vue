@@ -2,7 +2,7 @@
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
 import type { SceneInfo, SceneParams } from '#/api/system';
 
-import { onMounted, ref } from 'vue';
+import { h, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 
@@ -13,6 +13,7 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getLineDropdownList, getSceneList } from '#/api/system';
 
 const lineMap = ref<Record<string, string>>({});
+const lineOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
   const list = await getLineDropdownList();
@@ -23,10 +24,14 @@ onMounted(async () => {
     },
     {} as Record<string, string>,
   );
+  lineOptions.value = list.map((item) => ({
+    label: item.key,
+    value: item.value,
+  }));
 });
 
 // 查询表单配置
-const [QueryForm] = useVbenForm({
+const [QueryForm, queryFormApi] = useVbenForm({
   collapsed: false,
   commonConfig: {
     componentProps: {
@@ -39,10 +44,8 @@ const [QueryForm] = useVbenForm({
     {
       component: 'ApiSelect',
       componentProps: {
-        api: getLineDropdownList,
+        options: lineOptions,
         placeholder: '业务线名称',
-        labelField: 'key',
-        valueField: 'value',
       },
       fieldName: 'lineNo',
       label: '业务线',
@@ -129,16 +132,72 @@ const gridOptions: VxeGridProps<SceneInfo> = {
     { field: 'createAt', title: '创建时间' },
     {
       title: '操作',
-      width: 150,
-      cellRender: {
-        name: 'CellOperation',
-        props: {
-          onEdit: (row: SceneInfo) => {
-            handleEdit(row);
-          },
-          onInfo: (row: SceneInfo) => {
-            handleInfo(row);
-          },
+      width: 200,
+      // cellRender: {
+      //   name: 'CellOperation',
+      //   props: {
+      //     onEdit: (row: SceneInfo) => {
+      //       handleEdit(row);
+      //     },
+      //     onInfo: (row: SceneInfo) => {
+      //       handleInfo(row);
+      //     },
+      //   },
+      // },
+      slots: {
+        default: ({ row: sceneInfo }: { row: SceneInfo }) => {
+          const buttons = [
+            h(
+              ElButton,
+              {
+                type: 'primary',
+                size: 'small',
+                onClick: () => handleEdit(sceneInfo),
+              },
+              { default: () => '编辑' },
+            ),
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(sceneInfo),
+              },
+              { default: () => '详情' },
+            ),
+          ];
+
+          if (sceneInfo.isValid === 0) {
+            buttons.push(
+              h(
+                ElButton,
+                {
+                  type: 'success',
+                  size: 'small',
+                  onClick: () => handleValid(sceneInfo),
+                },
+                { default: () => '生效' },
+              ),
+            );
+          } else {
+            buttons.push(
+              h(
+                ElButton,
+                {
+                  type: 'warning',
+                  size: 'small',
+                  onClick: () => handleInvalid(sceneInfo),
+                },
+                { default: () => '失效' },
+              ),
+            );
+          }
+
+          return h(
+            'div',
+            { class: 'flex flex-wrap gap-2 justify-center' },
+            buttons,
+          );
         },
       },
     },
@@ -190,10 +249,8 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'ApiSelect',
       componentProps: {
-        api: getLineDropdownList,
+        options: lineOptions,
         placeholder: '业务线名称',
-        labelField: 'key',
-        valueField: 'value',
       },
       fieldName: 'lineNo',
       label: '业务线名称',
@@ -392,6 +449,30 @@ function handleEdit(row: SceneInfo) {
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
   editDrawerVisible.value = true;
+}
+
+// 生效场景
+async function handleValid(row: SceneInfo) {
+  try {
+    // await updateScene({ ...row, isValid: 1 });
+    ElMessage.success(`操作成功 生效${row.id}`);
+    const values = await queryFormApi.getValues();
+    gridApi.reload(values);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// 失效场景
+async function handleInvalid(row: SceneInfo) {
+  try {
+    // await updateScene({ ...row, isValid: 0 });
+    ElMessage.success(`操作成功 失效${row.id}`);
+    const values = await queryFormApi.getValues();
+    gridApi.reload(values);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // 保存
