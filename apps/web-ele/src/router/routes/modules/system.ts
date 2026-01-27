@@ -29,6 +29,22 @@ const routes: RouteRecordRaw[] = [
         path: '/system/scene',
         component: () => import('#/views/system/scene/index.vue'),
       },
+      {
+        meta: {
+          title: $t('page.system.dataSource'),
+        },
+        name: 'DataSource',
+        path: '/system/dataSource',
+        component: () => import('#/views/system/dataSource/index.vue'),
+      },
+      {
+        meta: {
+          title: $t('page.system.dataCategory'),
+        },
+        name: 'DataCategory',
+        path: '/system/dataCategory',
+        component: () => import('#/views/system/dataCategory/index.vue'),
+      },
     ],
   },
 ];

@@ -12,6 +12,38 @@
   "system": {
     "title": "System Management",
     "line": "Line",
-    "scene": "Scene"
+    "scene": "Scene",
+    "dataSource": "Data Source",
+    "dataCategory": "Data Category"
+  },
+  "rule": {
+    "title": "Rule Management",
+    "rule": "Rule",
+    "ruleSet": "Rule Set"
+  },
+  "product": {
+    "title": "Product Management",
+    "custom": "Custom Product",
+    "interest": "Interest Product",
+    "period": "Period Product",
+    "limit": "Limit Product"
+  },
+  "divide": {
+    "title": "Divide Management",
+    "divide": "Divide"
+  },
+  "strategy": {
+    "title": "Strategy Management",
+    "strategy": "Strategy"
+  },
+  "deploy": {
+    "title": "Deploy Management",
+    "deploy": "Deploy"
+  },
+  "monitor": {
+    "title": "Monitor Management",
+    "sceneMonitor": "Scene Monitor",
+    "fieldMonitor": "Field Monitor",
+    "reqIdMonitor": "ReqId User Request"
   }
 }

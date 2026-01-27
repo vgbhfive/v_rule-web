@@ -12,6 +12,38 @@
   "system": {
     "title": "系统管理",
     "line": "业务线",
-    "scene": "场景"
+    "scene": "场景",
+    "dataSource": "数据源",
+    "dataCategory": "数据源分类"
+  },
+  "rule": {
+    "title": "规则管理",
+    "rule": "规则",
+    "ruleSet": "规则集"
+  },
+  "product": {
+    "title": "产品管理",
+    "custom": "自定义产品",
+    "interest": "利率产品",
+    "period": "账期产品",
+    "limit": "额度产品"
+  },
+  "divide": {
+    "title": "分流器管理",
+    "divide": "分流器"
+  },
+  "strategy": {
+    "title": "策略集管理",
+    "strategy": "策略集"
+  },
+  "deploy": {
+    "title": "发布管理",
+    "deploy": "发布上线"
+  },
+  "monitor": {
+    "title": "监控管理",
+    "sceneMonitor": "场景监控",
+    "fieldMonitor": "字段监控",
+    "reqIdMonitor": "ReqId用户请求"
   }
 }
