@@ -13,6 +13,10 @@
     "title": "系统管理",
     "line": "业务线",
     "scene": "场景",
+    "user": "用户"
+  },
+  "data": {
+    "title": "数据管理",
     "dataSource": "数据源",
     "dataCategory": "数据源分类"
   },

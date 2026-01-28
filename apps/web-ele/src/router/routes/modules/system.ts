@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
           title: $t('page.system.line'),
         },
         name: 'Line',
-        path: '/system/line',
+        path: '/line',
         component: () => import('#/views/system/line/index.vue'),
       },
       {
@@ -26,24 +26,16 @@ const routes: RouteRecordRaw[] = [
           title: $t('page.system.scene'),
         },
         name: 'Scene',
-        path: '/system/scene',
+        path: '/scene',
         component: () => import('#/views/system/scene/index.vue'),
       },
       {
         meta: {
-          title: $t('page.system.dataSource'),
+          title: $t('page.system.user'),
         },
-        name: 'DataSource',
-        path: '/system/dataSource',
-        component: () => import('#/views/system/dataSource/index.vue'),
-      },
-      {
-        meta: {
-          title: $t('page.system.dataCategory'),
-        },
-        name: 'DataCategory',
-        path: '/system/dataCategory',
-        component: () => import('#/views/system/dataCategory/index.vue'),
+        name: 'User',
+        path: '/user',
+        component: () => import('#/views/system/user/index.vue'),
       },
     ],
   },

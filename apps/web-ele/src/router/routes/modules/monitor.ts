@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'ion:settings-outline',
       keepAlive: true,
-      order: 1005,
+      order: 1007,
       title: $t('page.monitor.title'),
     },
     name: 'MonitorManagement',

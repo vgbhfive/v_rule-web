@@ -11,9 +11,9 @@ export interface DataSourceInfo {
   sourceType: string;
   dataCategoryNo: string;
   type: string;
+  version?: number;
   isValid: number;
   createAt: string;
-  updateAt: string;
 }
 
 export interface DataSourceParams {

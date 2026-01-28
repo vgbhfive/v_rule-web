@@ -295,6 +295,8 @@ const gridOptions: VxeGridProps<DataSourceInfo> = {
   sortConfig: {
     multiple: true,
   },
+  border: true,
+  stripe: true,
 };
 
 const gridEvents: VxeGridListeners<DataSourceInfo> = {
@@ -305,7 +307,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditingId = ref<null | number>(null);
+const currentEditing = ref<DataSourceInfo | null>(null);
 const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
@@ -318,6 +320,7 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
+  handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -390,16 +393,6 @@ const [EditForm, editFormApi] = useVbenForm({
       label: '字段格式',
     },
     {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入版本',
-        disabled: true,
-      },
-      fieldName: 'version',
-      label: '版本',
-      rules: 'required',
-    },
-    {
       component: 'Select',
       componentProps: {
         allowClear: true,
@@ -429,7 +422,7 @@ const [EditForm, editFormApi] = useVbenForm({
 // 场景详情
 function handleInfo(row: DataSourceInfo) {
   drawerTitle.value = '数据源详情';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -474,12 +467,6 @@ function handleInfo(row: DataSourceInfo) {
     },
     {
       fieldName: 'format',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'version',
       componentProps: {
         disabled: true,
       },
@@ -547,13 +534,6 @@ function handleAdd() {
       },
     },
     {
-      fieldName: 'version',
-      componentProps: {
-        disabled: false,
-      },
-      hide: true,
-    },
-    {
       fieldName: 'isValid',
       componentProps: {
         disabled: false,
@@ -570,7 +550,7 @@ function handleAdd() {
 // 编辑场景
 function handleEdit(row: DataSourceInfo) {
   drawerTitle.value = '编辑数据源';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -618,12 +598,6 @@ function handleEdit(row: DataSourceInfo) {
       fieldName: 'format',
       componentProps: {
         disabled: false,
-      },
-    },
-    {
-      fieldName: 'version',
-      componentProps: {
-        disabled: true,
       },
     },
     {
@@ -688,7 +662,7 @@ async function handleSaveEdit(values: any) {
 
     if (isEdit.value) {
       const updateData = {
-        id: currentEditingId.value,
+        id: currentEditing.value?.id,
         lineNo: values.lineNo,
         dataSourceName: values.dataSourceName,
         dataSourceNo: values.dataSourceNo,
@@ -696,8 +670,9 @@ async function handleSaveEdit(values: any) {
         type: values.type,
         field: values.field,
         format: values.format || '',
-        version: values.version,
+        version: currentEditing.value?.version,
         isValid: values.isValid,
+        createAt: currentEditing.value?.createAt,
       };
 
       const resp = await updateDataSource(updateData);
@@ -712,17 +687,27 @@ async function handleSaveEdit(values: any) {
 
     // 重置表单
     await editFormApi.resetForm();
-    currentEditingId.value = null;
+    currentEditing.value = null;
   } catch (error) {
     ElMessage.error('场景更新失败');
     console.error('场景更新失败:', error);
   }
 }
 
+// 重置
+function handleResetEdit() {
+  if (isAdd.value) {
+    editFormApi.resetForm();
+  }
+  if (isEdit.value) {
+    editFormApi.setValues(currentEditing.value || {});
+  }
+}
+
 // 取消编辑
 function handleCancelEdit() {
   editDrawerVisible.value = false;
-  currentEditingId.value = null;
+  currentEditing.value = null;
   editFormApi.resetForm();
 }
 

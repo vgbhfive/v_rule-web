@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'ion:settings-outline',
       keepAlive: true,
-      order: 1003,
+      order: 1004,
       title: $t('page.divide.title'),
     },
     name: 'DivideManagement',

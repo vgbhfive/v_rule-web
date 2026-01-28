@@ -235,6 +235,8 @@ const gridOptions: VxeGridProps<DataCategoryInfo> = {
   sortConfig: {
     multiple: true,
   },
+  border: true,
+  stripe: true,
 };
 
 const gridEvents: VxeGridListeners<DataCategoryInfo> = {
@@ -245,7 +247,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditingId = ref<null | number>(null);
+const currentEditing = ref<DataCategoryInfo | null>(null);
 const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
@@ -258,6 +260,7 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
+  handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -321,15 +324,6 @@ const [EditForm, editFormApi] = useVbenForm({
       rules: 'required',
     },
     {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入版本',
-        disabled: true,
-      },
-      fieldName: 'version',
-      label: '版本',
-    },
-    {
       component: 'Select',
       componentProps: {
         allowClear: true,
@@ -370,7 +364,7 @@ const [EditForm, editFormApi] = useVbenForm({
 // 详情
 function handleInfo(row: DataCategoryInfo) {
   drawerTitle.value = '数据源分类详情';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -413,13 +407,6 @@ function handleInfo(row: DataCategoryInfo) {
       componentProps: {
         disabled: true,
       },
-    },
-    {
-      fieldName: 'version',
-      componentProps: {
-        disabled: true,
-      },
-      hide: false,
     },
     {
       fieldName: 'categoryType',
@@ -495,13 +482,6 @@ function handleAdd() {
         disabled: false,
       },
     },
-    {
-      fieldName: 'version',
-      componentProps: {
-        disabled: false,
-      },
-      hide: true,
-    },
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
@@ -513,7 +493,7 @@ function handleAdd() {
 // 编辑
 function handleEdit(row: DataCategoryInfo) {
   drawerTitle.value = '编辑数据源分类';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -565,12 +545,6 @@ function handleEdit(row: DataCategoryInfo) {
     },
     {
       fieldName: 'categoryType',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'version',
       componentProps: {
         disabled: true,
       },
@@ -632,7 +606,7 @@ async function handleSaveEdit(values: any) {
     }
     if (isEdit.value) {
       const updateData = {
-        id: currentEditingId.value,
+        id: currentEditing.value?.id,
         lineNo: values.lineNo,
         dataCategoryName: values.dataCategoryName,
         dataCategoryNo: values.dataCategoryNo,
@@ -641,7 +615,8 @@ async function handleSaveEdit(values: any) {
         priority: values.priority,
         categoryType: values.categoryType,
         isValid: values.isValid,
-        version: values.version,
+        version: currentEditing.value?.version,
+        createAt: currentEditing.value?.createAt,
       };
 
       const resp = await updateDataCategory(updateData);
@@ -657,17 +632,27 @@ async function handleSaveEdit(values: any) {
 
     // 重置表单
     await editFormApi.resetForm();
-    currentEditingId.value = null;
+    currentEditing.value = null;
   } catch (error) {
     ElMessage.error('数据源分类操作失败');
     console.error('数据源分类操作失败:', error);
   }
 }
 
+// 重置
+function handleResetEdit() {
+  if (isAdd.value) {
+    editFormApi.resetForm();
+  }
+  if (isEdit.value) {
+    editFormApi.setValues(currentEditing.value || {});
+  }
+}
+
 // 取消编辑
 function handleCancelEdit() {
   editDrawerVisible.value = false;
-  currentEditingId.value = null;
+  currentEditing.value = null;
   editFormApi.resetForm();
 }
 

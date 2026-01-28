@@ -13,6 +13,10 @@
     "title": "System Management",
     "line": "Line",
     "scene": "Scene",
+    "user": "User"
+  },
+  "data": {
+    "title": "Data Management",
     "dataSource": "Data Source",
     "dataCategory": "Data Category"
   },

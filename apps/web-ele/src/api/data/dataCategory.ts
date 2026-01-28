@@ -1,6 +1,6 @@
 import type { Recordable } from '@vben/types';
 
-import type { Dropdown } from './line';
+import type { Dropdown } from '../system/line';
 
 import { requestClient } from '#/api/request';
 

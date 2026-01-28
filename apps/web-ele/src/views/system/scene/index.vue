@@ -221,6 +221,8 @@ const gridOptions: VxeGridProps<SceneInfo> = {
   sortConfig: {
     multiple: true,
   },
+  border: true,
+  stripe: true,
 };
 
 const gridEvents: VxeGridListeners<SceneInfo> = {
@@ -231,7 +233,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditingId = ref<null | number>(null);
+const currentEditing = ref<null | SceneInfo>(null);
 const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
@@ -244,6 +246,7 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
+  handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -316,7 +319,7 @@ const [EditForm, editFormApi] = useVbenForm({
 // 场景详情
 function handleInfo(row: SceneInfo) {
   drawerTitle.value = '场景详情';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -409,7 +412,7 @@ function handleAdd() {
 // 编辑场景
 function handleEdit(row: SceneInfo) {
   drawerTitle.value = '编辑场景';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -501,12 +504,13 @@ async function handleSaveEdit(values: any) {
     }
     if (isEdit.value) {
       const updateData = {
-        id: currentEditingId.value,
+        id: currentEditing.value?.id,
         lineNo: values.lineNo,
         sceneName: values.sceneName,
         sceneNo: values.sceneNo,
         field: values.field,
         isValid: values.isValid,
+        createAt: currentEditing.value?.createAt,
       };
       const resp = await updateScene(updateData);
 
@@ -522,17 +526,27 @@ async function handleSaveEdit(values: any) {
 
     // 重置表单
     await editFormApi.resetForm();
-    currentEditingId.value = null;
+    currentEditing.value = null;
   } catch (error) {
     ElMessage.error('场景操作失败');
     console.error('场景操作失败:', error);
   }
 }
 
+// 重置
+function handleResetEdit() {
+  if (isAdd.value) {
+    editFormApi.resetForm();
+  }
+  if (isEdit.value) {
+    editFormApi.setValues(currentEditing.value || {});
+  }
+}
+
 // 取消编辑
 function handleCancelEdit() {
   editDrawerVisible.value = false;
-  currentEditingId.value = null;
+  currentEditing.value = null;
   editFormApi.resetForm();
 }
 
