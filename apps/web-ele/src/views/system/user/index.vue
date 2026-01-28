@@ -103,7 +103,6 @@ const gridOptions: VxeGridProps<UserInfo> = {
     {
       field: 'status',
       title: '状态',
-      width: 80,
       formatter: ({ cellValue }) => {
         return cellValue === 1
           ? '冻结'
