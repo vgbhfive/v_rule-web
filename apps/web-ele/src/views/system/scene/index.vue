@@ -10,7 +10,13 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getLineDropdownList, getSceneList } from '#/api/system';
+import {
+  createScene,
+  getLineDropdownList,
+  getSceneList,
+  updateScene,
+  updateSceneValid,
+} from '#/api/system';
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -44,6 +50,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
       componentProps: {
         options: lineOptions,
         placeholder: '业务线名称',
+        clearable: true,
       },
       fieldName: 'lineNo',
       label: '业务线',
@@ -52,6 +59,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
       component: 'Input',
       componentProps: {
         placeholder: '场景名称',
+        clearable: true,
       },
       fieldName: 'sceneName',
       label: '名称',
@@ -59,24 +67,27 @@ const [QueryForm, queryFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '场景字段',
+        placeholder: '场景编码',
+        clearable: true,
       },
-      fieldName: 'field',
-      label: '字段',
+      fieldName: 'sceneNo',
+      label: '编码',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '场景编码',
+        placeholder: '场景字段',
+        clearable: true,
       },
-      fieldName: 'sceneNo',
-      label: '编码',
+      fieldName: 'field',
+      label: '字段',
     },
     {
       component: 'Select',
       componentProps: {
         allowClear: true,
         filterOption: true,
+        clearable: true,
         options: [
           {
             label: '生效',
@@ -108,21 +119,22 @@ async function onSubmit(values: SceneParams) {
 // 表格配置
 const gridOptions: VxeGridProps<SceneInfo> = {
   columns: [
-    { field: 'id', title: 'ID', width: 80 },
+    { type: 'seq', title: '序号', width: 50 },
     {
       field: 'lineNo',
-      title: '业务线名称',
+      title: '业务线',
       slots: {
         default: ({ row }: { row: SceneInfo }) =>
           lineMap.value[row.lineNo] || row.lineNo,
       },
     },
-    { field: 'sceneName', title: '场景名称' },
-    { field: 'sceneNo', title: '场景编码' },
+    { field: 'sceneName', title: '名称' },
+    { field: 'sceneNo', title: '编码' },
     { field: 'field', title: '字段', showOverflow: true, width: 250 },
     {
       field: 'isValid',
       title: '状态',
+      width: 80,
       formatter: ({ cellValue }) => {
         return cellValue === 1 ? '生效' : '失效';
       },
@@ -130,18 +142,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
     { field: 'createAt', title: '创建时间' },
     {
       title: '操作',
-      width: 200,
-      // cellRender: {
-      //   name: 'CellOperation',
-      //   props: {
-      //     onEdit: (row: SceneInfo) => {
-      //       handleEdit(row);
-      //     },
-      //     onInfo: (row: SceneInfo) => {
-      //       handleInfo(row);
-      //     },
-      //   },
-      // },
+      width: 250,
       slots: {
         default: ({ row: sceneInfo }: { row: SceneInfo }) => {
           const buttons = [
@@ -232,6 +233,8 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditingId = ref<null | number>(null);
 const drawerTitle = ref('');
+const isAdd = ref(false);
+const isEdit = ref(false);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -312,8 +315,6 @@ const [EditForm, editFormApi] = useVbenForm({
 
 // 场景详情
 function handleInfo(row: SceneInfo) {
-  // 这里可以打开编辑弹窗，目前先提示
-  ElMessage.info(`场景详情: ${row.sceneName}`);
   drawerTitle.value = '场景详情';
   currentEditingId.value = row.id;
   // 重置表单以清除之前的校验状态
@@ -333,6 +334,7 @@ function handleInfo(row: SceneInfo) {
       componentProps: {
         disabled: true,
       },
+      hide: false,
     },
     {
       fieldName: 'sceneName',
@@ -361,7 +363,6 @@ function handleInfo(row: SceneInfo) {
 // 新增场景
 function handleAdd() {
   drawerTitle.value = '新增场景';
-  ElMessage.info(`新增场景`);
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 设置部分字段可编辑
@@ -383,6 +384,7 @@ function handleAdd() {
       componentProps: {
         disabled: false,
       },
+      hide: true,
     },
     {
       fieldName: 'field',
@@ -399,13 +401,14 @@ function handleAdd() {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = true;
+  isEdit.value = false;
   editDrawerVisible.value = true;
 }
 
 // 编辑场景
 function handleEdit(row: SceneInfo) {
   drawerTitle.value = '编辑场景';
-  ElMessage.info(`编辑场景: ${row.id}`);
   currentEditingId.value = row.id;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
@@ -430,6 +433,7 @@ function handleEdit(row: SceneInfo) {
       componentProps: {
         disabled: true,
       },
+      hide: false,
     },
     {
       fieldName: 'field',
@@ -446,14 +450,18 @@ function handleEdit(row: SceneInfo) {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = false;
+  isEdit.value = true;
   editDrawerVisible.value = true;
 }
 
 // 生效场景
 async function handleValid(row: SceneInfo) {
   try {
-    // await updateScene({ ...row, isValid: 1 });
-    ElMessage.success(`操作成功 生效${row.id}`);
+    const data = { id: row.id, isValid: 1 };
+    const resp = await updateSceneValid(data);
+    ElMessage.success(resp);
+
     const values = await queryFormApi.getValues();
     gridApi.reload(values);
   } catch (error) {
@@ -464,8 +472,10 @@ async function handleValid(row: SceneInfo) {
 // 失效场景
 async function handleInvalid(row: SceneInfo) {
   try {
-    // await updateScene({ ...row, isValid: 0 });
-    ElMessage.success(`操作成功 失效${row.id}`);
+    const data = { id: row.id, isValid: 0 };
+    const resp = await updateSceneValid(data);
+    ElMessage.success(resp);
+
     const values = await queryFormApi.getValues();
     gridApi.reload(values);
   } catch (error) {
@@ -475,24 +485,34 @@ async function handleInvalid(row: SceneInfo) {
 
 // 保存
 async function handleSaveEdit(values: any) {
-  // if (!currentEditingId.value) return;
-
   try {
-    // 构建更新数据
-    const updateData = {
-      id: currentEditingId.value,
-      lineNo: values.lineNo,
-      sceneName: values.sceneName,
-      sceneNo: values.sceneNo,
-      field: values.field,
-      isValid: values.isValid,
-    };
+    if (isAdd.value) {
+      const insertData = {
+        lineNo: values.lineNo,
+        sceneName: values.sceneName,
+        sceneNo: values.sceneNo,
+        field: values.field,
+        isValid: values.isValid,
+      };
+      const resp = await createScene(insertData);
 
-    // 调用更新API
-    // await updateScene(currentEditingId.value, updateData);
+      isAdd.value = false;
+      ElMessage.success(resp);
+    }
+    if (isEdit.value) {
+      const updateData = {
+        id: currentEditingId.value,
+        lineNo: values.lineNo,
+        sceneName: values.sceneName,
+        sceneNo: values.sceneNo,
+        field: values.field,
+        isValid: values.isValid,
+      };
+      const resp = await updateScene(updateData);
 
-    ElMessage.success(`场景更新成功${updateData.sceneName}`);
-    console.log(updateData);
+      isEdit.value = false;
+      ElMessage.success(resp);
+    }
 
     // 关闭弹窗
     editDrawerVisible.value = false;
@@ -504,14 +524,13 @@ async function handleSaveEdit(values: any) {
     await editFormApi.resetForm();
     currentEditingId.value = null;
   } catch (error) {
-    ElMessage.error('场景更新失败');
-    console.error('场景更新失败:', error);
+    ElMessage.error('场景操作失败');
+    console.error('场景操作失败:', error);
   }
 }
 
 // 取消编辑
 function handleCancelEdit() {
-  ElMessage.success('取消');
   editDrawerVisible.value = false;
   currentEditingId.value = null;
   editFormApi.resetForm();
@@ -527,7 +546,7 @@ function handleDrawerClose(done: () => void) {
 <template>
   <Page description="场景管理">
     <div>
-      <div class="flex">
+      <div class="w-full">
         <QueryForm />
       </div>
       <div class="mb-4 mt-4 flex justify-start pl-[15px]">
@@ -543,7 +562,7 @@ function handleDrawerClose(done: () => void) {
       </div>
     </div>
 
-    <!-- 新增/编辑场景侧边弹窗 -->
+    <!-- 新增/编辑/详情场景侧边弹窗 -->
     <ElDrawer
       v-model="editDrawerVisible"
       direction="rtl"

@@ -10,7 +10,12 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getLineDropdownList, getLineList } from '#/api/system';
+import {
+  getLineDropdownList,
+  getLineList,
+  insertLine,
+  updateLine,
+} from '#/api/system';
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -43,24 +48,26 @@ const [QueryForm, queryFormApi] = useVbenForm({
       component: 'Input',
       componentProps: {
         placeholder: '业务线名称',
+        clearable: true,
       },
       fieldName: 'lineName',
       label: '名称',
     },
     {
-      component: 'ApiSelect',
+      component: 'Input',
       componentProps: {
-        options: lineOptions,
-        placeholder: '业务线名称',
+        placeholder: '业务线编码',
+        clearable: true,
       },
       fieldName: 'lineNo',
-      label: '业务线',
+      label: '编码',
     },
     {
       component: 'Select',
       componentProps: {
         allowClear: true,
         filterOption: true,
+        clearable: true,
         options: [
           {
             label: '生效',
@@ -81,7 +88,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   submitButtonOptions: {
     content: '查询',
   },
-  wrapperClass: 'grid-cols-2 grid-cols-3',
+  wrapperClass: 'grid-cols-3 grid-cols-4',
 });
 
 // 表单提交处理
@@ -92,15 +99,8 @@ async function onSubmit(values: LineParams) {
 // 表格配置
 const gridOptions: VxeGridProps<LineInfo> = {
   columns: [
-    { field: 'id', title: 'ID', width: 80 },
-    {
-      field: 'lineName',
-      title: '名称',
-      slots: {
-        default: ({ row }: { row: LineInfo }) =>
-          lineMap.value[row.lineNo] || row.lineNo,
-      },
-    },
+    { type: 'seq', title: '序号', width: 50 },
+    { field: 'lineName', title: '名称' },
     { field: 'lineNo', title: '编码' },
     { field: 'url', title: 'URL', showOverflow: true, width: 250 },
     {
@@ -178,6 +178,9 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditingId = ref<null | number>(null);
 const drawerTitle = ref('');
+const initialEditData = ref<LineInfo | null>(null);
+const isAdd = ref(false);
+const isEdit = ref(false);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -249,8 +252,6 @@ const [EditForm, editFormApi] = useVbenForm({
 
 // 场景详情
 function handleInfo(row: LineInfo) {
-  // 这里可以打开编辑弹窗，目前先提示
-  ElMessage.info(`业务线详情: ${row.lineName}`);
   drawerTitle.value = '业务线详情';
   currentEditingId.value = row.id;
   // 重置表单以清除之前的校验状态
@@ -292,7 +293,6 @@ function handleInfo(row: LineInfo) {
 // 新增业务线
 function handleAdd() {
   drawerTitle.value = '新增业务线';
-  ElMessage.info(`新增业务线`);
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 设置部分字段可编辑
@@ -324,14 +324,16 @@ function handleAdd() {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = true;
+  isEdit.value = false;
   editDrawerVisible.value = true;
 }
 
 // 编辑业务线
 function handleEdit(row: LineInfo) {
   drawerTitle.value = '编辑业务线';
-  ElMessage.info(`编辑业务线: ${row.id}`);
   currentEditingId.value = row.id;
+  initialEditData.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
@@ -365,6 +367,8 @@ function handleEdit(row: LineInfo) {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = false;
+  isEdit.value = true;
   editDrawerVisible.value = true;
 }
 
@@ -373,20 +377,32 @@ async function handleSaveEdit(values: any) {
   // if (!currentEditingId.value) return;
 
   try {
-    // 构建更新数据
-    const updateData = {
-      id: currentEditingId.value,
-      lineNo: values.lineNo,
-      sceneName: values.sceneName,
-      sceneNo: values.sceneNo,
-      field: values.field,
-      isValid: values.isValid,
-    };
+    if (isAdd.value) {
+      const insertData = {
+        lineName: values.lineName,
+        lineNo: values.lineNo,
+        url: values.url,
+        isValid: values.isValid,
+      };
+      const resp = await insertLine(insertData);
 
-    // 调用更新API
-    // await updateScene(currentEditingId.value, updateData);
+      isAdd.value = false;
+      ElMessage.success(resp);
+    }
 
-    ElMessage.success(`业务线更新成功${updateData.lineName}`);
+    if (isEdit.value) {
+      const updateData = {
+        id: currentEditingId.value,
+        lineName: values.lineName,
+        lineNo: values.lineNo,
+        url: values.url,
+        isValid: values.isValid,
+      };
+      const resp = await updateLine(updateData);
+
+      isEdit.value = false;
+      ElMessage.success(resp);
+    }
 
     // 关闭弹窗
     editDrawerVisible.value = false;
@@ -399,14 +415,13 @@ async function handleSaveEdit(values: any) {
     await editFormApi.resetForm();
     currentEditingId.value = null;
   } catch (error) {
-    ElMessage.error('场景更新失败');
-    console.error('场景更新失败:', error);
+    ElMessage.error('业务线操作失败');
+    console.error('业务线操作失败:', error);
   }
 }
 
 // 取消编辑
 function handleCancelEdit() {
-  ElMessage.success('取消');
   editDrawerVisible.value = false;
   currentEditingId.value = null;
   editFormApi.resetForm();
@@ -422,7 +437,7 @@ function handleDrawerClose(done: () => void) {
 <template>
   <Page description="业务线管理">
     <div>
-      <div class="flex">
+      <div class="w-full">
         <QueryForm />
       </div>
       <div class="mb-4 mt-4 flex justify-start pl-[15px]">

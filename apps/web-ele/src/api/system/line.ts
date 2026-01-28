@@ -17,7 +17,7 @@ export interface LineParams {
   isValid: number;
 }
 
-export interface LineDropdown {
+export interface Dropdown {
   key: string;
   value: string;
 }
@@ -34,5 +34,23 @@ export async function getLineList(params: Recordable<any>) {
  * @returns
  */
 export async function getLineDropdownList() {
-  return requestClient.get<LineDropdown[]>('/line/dropdown/list');
+  return requestClient.get<Dropdown[]>('/line/dropdown/list');
+}
+
+/**
+ * 新增业务线
+ * @param params
+ * @returns
+ */
+export async function insertLine(params: Recordable<any>) {
+  return requestClient.post('/line/create', params);
+}
+
+/**
+ * 更新业务线
+ * @param params
+ * @returns
+ */
+export async function updateLine(params: Recordable<any>) {
+  return requestClient.post('/line/update', params);
 }

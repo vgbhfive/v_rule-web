@@ -1,3 +1,5 @@
+import type { Recordable } from '@vben/types';
+
 import { requestClient } from '#/api/request';
 
 export interface SceneInfo {
@@ -39,32 +41,20 @@ export async function getSceneDetail(id: number) {
 /**
  * 创建场景
  */
-export async function createScene(
-  data: Omit<SceneInfo, 'createAt' | 'id' | 'updateAt'>,
-) {
-  return requestClient.post<SceneInfo>('/scene/create', data);
+export async function createScene(params: Recordable<any>) {
+  return requestClient.post('/scene/create', params);
 }
 
 /**
  * 更新场景
  */
-export async function updateScene(
-  id: number,
-  data: Omit<SceneInfo, 'createAt' | 'id' | 'updateAt'>,
-) {
-  return requestClient.put<SceneInfo>(`/scene/update/${id}`, data);
+export async function updateScene(params: Recordable<any>) {
+  return requestClient.post(`/scene/update`, params);
 }
 
 /**
- * 生效场景
+ * 生效/失效场景
  */
-export async function validScene(id: number) {
-  return requestClient.post<boolean>(`/scene/valid/${id}`);
-}
-
-/**
- * 失效场景
- */
-export async function inValidScene(id: number) {
-  return requestClient.post<boolean>(`/scene/invalid/${id}`);
+export async function updateSceneValid(params: Recordable<any>) {
+  return requestClient.post(`/scene/valid`, params);
 }
