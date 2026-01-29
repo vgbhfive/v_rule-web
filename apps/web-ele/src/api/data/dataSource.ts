@@ -56,3 +56,13 @@ export async function updateDataSource(param: Recordable<any>) {
 export async function updateDataSourceValid(params: Recordable<any>) {
   return requestClient.post(`/dataSource/valid`, params);
 }
+
+/**
+ * 数据源下拉
+ */
+export async function getDataSourceDropdownList(params: Recordable<any>) {
+  return requestClient.post<{ key: string; value: string }[]>(
+    `/dataSource/dropdown/list`,
+    params,
+  );
+}

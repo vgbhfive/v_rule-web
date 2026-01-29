@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { DataCategoryInfo, DataCategoryParams } from '#/api/system';
+import type { DataCategoryInfo, DataCategoryParams } from '#/api/data';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -10,14 +10,14 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getCategoryTypes } from '#/api';
 import {
   createDataCategory,
   getDataCategoryList,
-  getLineDropdownList,
   updateDataCategory,
   updateDataCategoryValid,
-} from '#/api/system';
+} from '#/api/data';
+import { getCategoryTypes } from '#/api/enums';
+import { getLineDropdownList } from '#/api/system';
 
 const lineMap = ref<Record<string, string>>({});
 const allCategoryMap = ref<Record<string, string>>({});

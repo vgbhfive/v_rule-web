@@ -12,9 +12,10 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createUser,
+  freeze,
   getUserList,
-  updateUser,
-  updateUserValid,
+  normal,
+  resetPassword,
 } from '#/api/system/user';
 
 // 查询表单配置
@@ -104,11 +105,7 @@ const gridOptions: VxeGridProps<UserInfo> = {
       field: 'status',
       title: '状态',
       formatter: ({ cellValue }) => {
-        return cellValue === 1
-          ? '冻结'
-          : (cellValue === 0
-            ? '正常'
-            : '初始化');
+        return cellValue === 1 ? '冻结' : cellValue === 0 ? '正常' : '初始化';
       },
     },
     { field: 'createAt', title: '创建时间' },
@@ -122,15 +119,6 @@ const gridOptions: VxeGridProps<UserInfo> = {
             h(
               ElButton,
               {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(userInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
                 type: 'info',
                 size: 'small',
                 onClick: () => handleInfo(userInfo),
@@ -139,16 +127,37 @@ const gridOptions: VxeGridProps<UserInfo> = {
             ),
           ];
 
-          if (userInfo.status === 0 || userInfo.status === 2) {
+          if (userInfo.status === 0) {
             buttons.push(
+              h(
+                ElButton,
+                {
+                  type: 'danger',
+                  size: 'small',
+                  onClick: () => handleFreeze(userInfo),
+                },
+                { default: () => '冻结' },
+              ),
               h(
                 ElButton,
                 {
                   type: 'warning',
                   size: 'small',
-                  onClick: () => handleInvalid(userInfo),
+                  onClick: () => handleReset(userInfo),
                 },
-                { default: () => '冻结' },
+                { default: () => '重置' },
+              ),
+            );
+          } else if (userInfo.status === 1) {
+            buttons.push(
+              h(
+                ElButton,
+                {
+                  type: 'success',
+                  size: 'small',
+                  onClick: () => handleValid(userInfo),
+                },
+                { default: () => '正常' },
               ),
             );
           } else {
@@ -156,11 +165,11 @@ const gridOptions: VxeGridProps<UserInfo> = {
               h(
                 ElButton,
                 {
-                  type: 'warning',
+                  type: 'danger',
                   size: 'small',
-                  onClick: () => handleInvalid(userInfo),
+                  onClick: () => handleFreeze(userInfo),
                 },
-                { default: () => '正常' },
+                { default: () => '冻结' },
               ),
             );
           }
@@ -211,7 +220,7 @@ const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
 
-// 新增/编辑/详情表单配置
+// 新增/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
   collapsed: false,
   commonConfig: {
@@ -283,7 +292,7 @@ const [EditForm, editFormApi] = useVbenForm({
   wrapperClass: 'grid-cols-1',
 });
 
-// 场景详情
+// 详情
 function handleInfo(row: UserInfo) {
   drawerTitle.value = '用户详情';
   currentEditing.value = row;
@@ -324,7 +333,7 @@ function handleInfo(row: UserInfo) {
   editDrawerVisible.value = true;
 }
 
-// 新增场景
+// 新增
 function handleAdd() {
   drawerTitle.value = '新增用户';
   // 重置表单以清除之前的校验状态
@@ -364,54 +373,39 @@ function handleAdd() {
   editDrawerVisible.value = true;
 }
 
-// 编辑场景
-function handleEdit(row: UserInfo) {
-  drawerTitle.value = '编辑用户';
-  currentEditing.value = row;
-  // 重置表单以清除之前的校验状态
-  editFormApi.resetForm();
-  // 填充表单数据
-  editFormApi.setValues(row);
-  // 设置部分字段不可编辑
-  editFormApi.updateSchema([
-    {
-      fieldName: 'name',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'mobile',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'email',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'isValid',
-      componentProps: {
-        disabled: false,
-      },
-      hide: false,
-    },
-  ]);
-  // 设置操作按钮可见
-  editFormApi.setState({ showDefaultActions: true });
-  isAdd.value = false;
-  isEdit.value = true;
-  editDrawerVisible.value = true;
+// 冻结
+async function handleFreeze(row: UserInfo) {
+  try {
+    const data = { email: row.email };
+    const resp = await freeze(data);
+    ElMessage.success(resp);
+
+    const values = await queryFormApi.getValues();
+    gridApi.reload(values);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-// 冻结
-async function handleInvalid(row: UserInfo) {
+// 重置
+async function handleReset(row: UserInfo) {
   try {
-    const data = { id: row.id, status: 1 };
-    const resp = await updateUserValid(data);
+    const data = { email: row.email };
+    const resp = await resetPassword(data);
+    ElMessage.success(resp);
+
+    const values = await queryFormApi.getValues();
+    gridApi.reload(values);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// 正常
+async function handleValid(row: UserInfo) {
+  try {
+    const data = { email: row.email };
+    const resp = await normal(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -426,30 +420,14 @@ async function handleSaveEdit(values: any) {
   try {
     if (isAdd.value) {
       const insertData = {
-        lineNo: values.lineNo,
-        sceneName: values.sceneName,
-        sceneNo: values.sceneNo,
-        field: values.field,
-        isValid: values.isValid,
+        name: values.name,
+        mobile: values.mobile,
+        email: values.email,
       };
+
       const resp = await createUser(insertData);
 
       isAdd.value = false;
-      ElMessage.success(resp);
-    }
-    if (isEdit.value) {
-      const updateData = {
-        id: currentEditing.value?.id,
-        lineNo: values.lineNo,
-        sceneName: values.sceneName,
-        sceneNo: values.sceneNo,
-        field: values.field,
-        isValid: values.isValid,
-        createAt: currentEditing.value?.createAt,
-      };
-      const resp = await updateUser(updateData);
-
-      isEdit.value = false;
       ElMessage.success(resp);
     }
 

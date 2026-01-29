@@ -35,7 +35,7 @@ export async function getUserList(param: UserParams) {
  * 创建用户
  */
 export async function createUser(params: Recordable<any>) {
-  return requestClient.post('/user/create', params);
+  return requestClient.post('/user/register', params);
 }
 
 /**
@@ -46,8 +46,29 @@ export async function updateUser(params: Recordable<any>) {
 }
 
 /**
- * 生效/失效用户
+ * 修改用户状态
  */
 export async function updateUserValid(params: Recordable<any>) {
   return requestClient.post(`/user/valid`, params);
+}
+
+/**
+ * 重置用户密码
+ */
+export async function resetPassword(params: Recordable<any>) {
+  return requestClient.post(`/user/resetPassword`, params);
+}
+
+/**
+ * 冻结用户
+ */
+export async function freeze(params: Recordable<any>) {
+  return requestClient.post(`/user/freeze`, params);
+}
+
+/**
+ * 恢复用户
+ */
+export async function normal(params: Recordable<any>) {
+  return requestClient.post(`/user/normal`, params);
 }

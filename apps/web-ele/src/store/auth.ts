@@ -62,6 +62,12 @@ export const useAuthStore = defineStore('auth', () => {
           title: $t('authentication.loginSuccess'),
           type: 'success',
         });
+      } else {
+        ElNotification({
+          message: $t('authentication.loginFailed'),
+          title: $t('authentication.loginFailedDesc'),
+          type: 'error',
+        });
       }
     } finally {
       loginLoading.value = false;
@@ -95,7 +101,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function changePassword(params: Recordable<any>) {
-    await changePasswordApi(params);
+    const resp = await changePasswordApi(params);
+    ElNotification.success(resp);
   }
 
   function $reset() {
