@@ -13,13 +13,18 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDataSourceDropdownList } from '#/api/data';
 import { getConditionTypes, getResultTypes, getValueTypes } from '#/api/enums';
-import { createRule, getRuleList, updateRuleValid } from '#/api/rule';
+import {
+  createRule,
+  getRuleList,
+  updateRule,
+  updateRuleValid,
+} from '#/api/rule';
 import { getLineDropdownList } from '#/api/system';
 
 const lineMap = ref<Record<string, string>>({});
 const allValueMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
-const conditionOptions = ref<{ label: string; value: string }[]>([]);
+const conditionTypeOptions = ref<{ label: string; value: string }[]>([]);
 const resultOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
@@ -44,7 +49,7 @@ onMounted(async () => {
 
   // 条件类型
   const conditionList = await getConditionTypes();
-  conditionOptions.value = conditionList.map((item) => ({
+  conditionTypeOptions.value = conditionList.map((item) => ({
     label: item.name,
     value: item.value,
   }));
@@ -284,6 +289,7 @@ const [EditForm, editFormApi] = useVbenForm({
     },
   },
   handleValuesChange: handleValueChange,
+  handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -330,7 +336,7 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'ApiSelect',
       componentProps: {
-        options: conditionOptions,
+        options: conditionTypeOptions,
         placeholder: '请选择条件',
         disabled: true,
       },
@@ -404,7 +410,17 @@ function handleInfo(row: RuleInfo) {
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  editFormApi.setValues(row);
+  const values = {
+    ...row,
+    thresholdFixed: '',
+    thresholdDataSource: '',
+  };
+  if (row.thresholdType === 'fixed') {
+    values.thresholdFixed = row.threshold;
+  } else if (row.thresholdType === 'dataSource') {
+    values.thresholdDataSource = row.threshold;
+  }
+  editFormApi.setValues(values);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
     {
@@ -438,10 +454,18 @@ function handleInfo(row: RuleInfo) {
       },
     },
     {
-      fieldName: 'threshold',
+      fieldName: 'thresholdFixed',
       componentProps: {
         disabled: true,
       },
+      hide: !(row.thresholdType === 'fixed'),
+    },
+    {
+      fieldName: 'thresholdDataSource',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.thresholdType === 'dataSource'),
     },
     {
       fieldName: 'result',
@@ -617,7 +641,17 @@ function handleEdit(row: RuleInfo) {
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  editFormApi.setValues(row);
+  const values = {
+    ...row,
+    thresholdFixed: '',
+    thresholdDataSource: '',
+  };
+  if (row.thresholdType === 'fixed') {
+    values.thresholdFixed = row.threshold;
+  } else if (row.thresholdType === 'dataSource') {
+    values.thresholdDataSource = row.threshold;
+  }
+  editFormApi.setValues(values);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
     {
@@ -627,21 +661,47 @@ function handleEdit(row: RuleInfo) {
       },
     },
     {
-      fieldName: 'sceneName',
+      fieldName: 'ruleName',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'sceneNo',
+      fieldName: 'ruleNo',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'field',
+      fieldName: 'dataSourceNo',
       componentProps: {
-        disabled: true,
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'cond',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'thresholdFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.thresholdType === 'fixed'),
+    },
+    {
+      fieldName: 'thresholdDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.thresholdType === 'dataSource'),
+    },
+    {
+      fieldName: 'result',
+      componentProps: {
+        disabled: false,
       },
     },
     {
@@ -653,6 +713,16 @@ function handleEdit(row: RuleInfo) {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAddFixed.value = false;
+  isAddDataSource.value = false;
+  if (row.thresholdType === 'fixed') {
+    isEditFixed.value = true;
+    isEditDataSource.value = false;
+  } else if (row.thresholdType === 'dataSource') {
+    isEditFixed.value = false;
+    isEditDataSource.value = true;
+  }
+  handleValueChange(row);
   editDrawerVisible.value = true;
 }
 
@@ -731,6 +801,45 @@ async function handleSaveEdit(values: any) {
       const resp = await createRule(insertData);
       ElMessage.success(resp);
     }
+
+    if (isEditFixed.value) {
+      const updateData = {
+        id: currentEditing.value?.id,
+        lineNo: values.lineNo,
+        ruleName: values.ruleName,
+        ruleNo: currentEditing.value?.ruleNo,
+        dataSourceNo: values.dataSourceNo,
+        cond: values.cond,
+        threshold: values.thresholdFixed,
+        thresholdType: 'fixed',
+        result: values.result,
+        isValid: values.isValid,
+        version: currentEditing.value?.version,
+        createAt: currentEditing.value?.createAt,
+      };
+
+      const resp = await updateRule(updateData);
+      ElMessage.success(resp);
+    }
+    if (isEditDataSource.value) {
+      const updateData = {
+        id: currentEditing.value?.id,
+        lineNo: values.lineNo,
+        ruleName: values.ruleName,
+        ruleNo: currentEditing.value?.ruleNo,
+        dataSourceNo: values.dataSourceNo,
+        cond: values.cond,
+        threshold: values.thresholdDataSource,
+        thresholdType: 'dataSource',
+        result: values.result,
+        isValid: values.isValid,
+        version: currentEditing.value?.version,
+        createAt: currentEditing.value?.createAt,
+      };
+
+      const resp = await updateRule(updateData);
+      ElMessage.success(resp);
+    }
     insertDataSourceListOptions.value = [];
     preLineNo.value = '';
 
@@ -746,6 +855,21 @@ async function handleSaveEdit(values: any) {
   } catch (error) {
     ElMessage.error('规则操作失败');
     console.error('规则操作失败:', error);
+  }
+}
+
+// 重置
+function handleResetEdit() {
+  if (isAddFixed.value || isAddDataSource.value) {
+    editFormApi.resetForm();
+  }
+  if (isEditFixed.value || isEditDataSource.value) {
+    const data = {
+      ...currentEditing.value,
+      thresholdFixed: currentEditing.value?.threshold,
+      thresholdDataSource: currentEditing.value?.threshold,
+    };
+    editFormApi.setValues(data || {});
   }
 }
 

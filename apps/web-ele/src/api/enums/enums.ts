@@ -54,3 +54,31 @@ export async function getResultTypes() {
     '/enum/resultType',
   );
 }
+
+/**
+ * 获取规则类型下拉列表
+ * @returns
+ */
+export async function getRuleTypes() {
+  return requestClient.get<{ key: string; name: string }[]>('/enum/ruleType');
+}
+
+/**
+ * 获取联合条件下拉列表
+ * @returns
+ */
+export async function getCombineTypes() {
+  return requestClient.get<{ name: string; value: string }[]>(
+    '/enum/combineType',
+  );
+}
+
+/**
+ * 获取利率产品单位类型下拉列表
+ * @returns
+ */
+export async function getInterestUnitTypes() {
+  return requestClient.get<{ name: string; type: string }[]>(
+    '/enum/interestUnitType',
+  );
+}
