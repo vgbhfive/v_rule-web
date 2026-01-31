@@ -25,7 +25,7 @@ export interface InterestParams {
  * 获取利率产品列表
  */
 export async function getInterestList(params: Recordable<any>) {
-  return requestClient.post<InterestInfo[]>('/product/interest/list', params);
+  return requestClient.post<InterestInfo[]>('/product/interest/list', { ...params, type: 'interest' });
 }
 
 /**

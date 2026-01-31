@@ -4,15 +4,45 @@ import { requestClient } from '#/api/request';
 
 export interface LimitInfo {
   id: number;
-  ruleName: string;
-  ruleNo: string;
+  lineNo: string;
+  productName: string;
+  productNo: string;
+  value: string;
+  valueType: string;
+  remark: string;
+  version: number;
   isValid: number;
   createAt: string;
 }
 
+export interface LimitParams {
+  lineNo: string;
+  productName: string;
+  productNo: string;
+  isValid: number;
+}
+
 /**
- * 获取规则列表
+ * 获取额度产品列表
  */
 export async function getLimitList(params: Recordable<any>) {
-  return requestClient.post<LimitInfo[]>('/limit/list', params);
+  return requestClient.post<LimitInfo[]>('/product/limit/list', { ...params, type: 'limit' });
+}
+
+/**
+ * 创建额度产品
+ * @param params
+ * @returns
+ */
+export async function createLimit(params: Recordable<any>) {
+  return requestClient.post('/product/limit/create', params);
+}
+
+/**
+ * 更新额度产品
+ * @param params
+ * @returns
+ */
+export async function updateLimit(params: Recordable<any>) {
+  return requestClient.post('/product/limit/update', params);
 }

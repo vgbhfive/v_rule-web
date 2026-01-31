@@ -15,6 +15,14 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          title: $t('page.product.limit'),
+        },
+        name: 'Limit',
+        path: '/product/limit',
+        component: () => import('#/views/product/limit/index.vue'),
+      },
+      {
+        meta: {
           title: $t('page.product.interest'),
         },
         name: 'Interest',
@@ -28,14 +36,6 @@ const routes: RouteRecordRaw[] = [
         name: 'Period',
         path: '/product/period',
         component: () => import('#/views/product/period/index.vue'),
-      },
-      {
-        meta: {
-          title: $t('page.product.limit'),
-        },
-        name: 'Limit',
-        path: '/product/limit',
-        component: () => import('#/views/product/limit/index.vue'),
       },
       {
         meta: {

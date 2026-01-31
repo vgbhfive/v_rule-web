@@ -1,19 +1,27 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { SceneInfo, SceneParams } from '#/api/system';
+import type { CustomParams, CustomInfo } from '#/api/product';
 
 import { h, onMounted, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
+import { Page, z } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getLineDropdownList, getSceneList } from '#/api/system';
+import { getDataSourceDropdownList } from '#/api/data';
+import { getValueTypes } from '#/api/enums';
+import {
+  getCustomList,
+  updateProductValid,
+} from '#/api/product';
+import { getLineDropdownList } from '#/api/system';
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
+const allValueMap = ref<Record<string, string>>({});
+const allValueOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
   const list = await getLineDropdownList();
@@ -25,6 +33,18 @@ onMounted(async () => {
   lineOptions.value = list.map((item) => ({
     label: item.key,
     value: item.value,
+  }));
+
+  // 阈值类型
+  const valueList = await getValueTypes();
+  const newValueMap: Record<string, string> = {};
+  for (const item of valueList) {
+    newValueMap[item.type] = item.name;
+  }
+  allValueMap.value = newValueMap;
+  allValueOptions.value = valueList.map((item) => ({
+    label: item.name,
+    value: item.type,
   }));
 });
 
@@ -44,6 +64,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
       componentProps: {
         options: lineOptions,
         placeholder: '业务线名称',
+        clearable: true,
       },
       fieldName: 'lineNo',
       label: '业务线',
@@ -51,25 +72,19 @@ const [QueryForm, queryFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '场景名称',
+        placeholder: '产品名称',
+        clearable: true,
       },
-      fieldName: 'sceneName',
+      fieldName: 'productName',
       label: '名称',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '场景字段',
+        placeholder: '产品编码',
+        clearable: true,
       },
-      fieldName: 'field',
-      label: '字段',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '场景编码',
-      },
-      fieldName: 'sceneNo',
+      fieldName: 'productNo',
       label: '编码',
     },
     {
@@ -77,6 +92,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
       componentProps: {
         allowClear: true,
         filterOption: true,
+        clearable: true,
         options: [
           {
             label: '生效',
@@ -101,28 +117,29 @@ const [QueryForm, queryFormApi] = useVbenForm({
 });
 
 // 表单提交处理
-async function onSubmit(values: SceneParams) {
+async function onSubmit(values: CustomParams) {
   await gridApi.reload({ ...values });
 }
 
 // 表格配置
-const gridOptions: VxeGridProps<SceneInfo> = {
+const gridOptions: VxeGridProps<CustomInfo> = {
   columns: [
-    { field: 'id', title: 'ID', width: 80 },
+    { type: 'seq', title: '序号', width: 50 },
     {
       field: 'lineNo',
-      title: '业务线名称',
+      title: '业务线',
       slots: {
-        default: ({ row }: { row: SceneInfo }) =>
+        default: ({ row }: { row: CustomInfo }) =>
           lineMap.value[row.lineNo] || row.lineNo,
       },
     },
-    { field: 'sceneName', title: '场景名称' },
-    { field: 'sceneNo', title: '场景编码' },
-    { field: 'field', title: '字段', showOverflow: true, width: 250 },
+    { field: 'productName', title: '名称' },
+    { field: 'productNo', title: '编码' },
+    { field: 'remark', title: '备注', width: 130 },
     {
       field: 'isValid',
       title: '状态',
+      width: 80,
       formatter: ({ cellValue }) => {
         return cellValue === 1 ? '生效' : '失效';
       },
@@ -131,26 +148,15 @@ const gridOptions: VxeGridProps<SceneInfo> = {
     {
       title: '操作',
       width: 200,
-      // cellRender: {
-      //   name: 'CellOperation',
-      //   props: {
-      //     onEdit: (row: SceneInfo) => {
-      //       handleEdit(row);
-      //     },
-      //     onInfo: (row: SceneInfo) => {
-      //       handleInfo(row);
-      //     },
-      //   },
-      // },
       slots: {
-        default: ({ row: sceneInfo }: { row: SceneInfo }) => {
+        default: ({ row: customInfo }: { row: CustomInfo }) => {
           const buttons = [
             h(
               ElButton,
               {
                 type: 'primary',
                 size: 'small',
-                onClick: () => handleEdit(sceneInfo),
+                onClick: () => handleEdit(customInfo),
               },
               { default: () => '编辑' },
             ),
@@ -159,20 +165,20 @@ const gridOptions: VxeGridProps<SceneInfo> = {
               {
                 type: 'info',
                 size: 'small',
-                onClick: () => handleInfo(sceneInfo),
+                onClick: () => handleInfo(customInfo),
               },
               { default: () => '详情' },
             ),
           ];
 
-          if (sceneInfo.isValid === 0) {
+          if (customInfo.isValid === 0) {
             buttons.push(
               h(
                 ElButton,
                 {
                   type: 'success',
                   size: 'small',
-                  onClick: () => handleValid(sceneInfo),
+                  onClick: () => handleValid(customInfo),
                 },
                 { default: () => '生效' },
               ),
@@ -184,7 +190,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
                 {
                   type: 'warning',
                   size: 'small',
-                  onClick: () => handleInvalid(sceneInfo),
+                  onClick: () => handleInvalid(customInfo),
                 },
                 { default: () => '失效' },
               ),
@@ -213,7 +219,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
           currPage: page.currentPage,
           limit: page.pageSize,
         };
-        return await getSceneList(params);
+        return await getCustomList(params);
       },
     },
   },
@@ -222,7 +228,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
   },
 };
 
-const gridEvents: VxeGridListeners<SceneInfo> = {
+const gridEvents: VxeGridListeners<CustomInfo> = {
   // 可以添加表格事件监听
 };
 
@@ -230,8 +236,12 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditingId = ref<null | number>(null);
+const currentEditing = ref<CustomInfo | null>(null);
 const drawerTitle = ref('');
+const preValueType = ref('');
+const isAdd = ref(false);
+const isEdit = ref(false);
+const dataSourceOptions = ref<{ label: string; value: string }[]>([]);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -241,6 +251,8 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
+  handleValuesChange,
+  handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -257,31 +269,37 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入场景名称',
+        placeholder: '请输入利率产品名称',
       },
-      fieldName: 'sceneName',
-      label: '场景名称',
+      fieldName: 'productName',
+      label: '利率产品名称',
       rules: 'required',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入场景编码',
+        placeholder: '请输入利率产品编码',
         disabled: true,
       },
-      fieldName: 'sceneNo',
-      label: '场景编码',
+      fieldName: 'productNo',
+      label: '利率产品编码',
       rules: 'required',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入场景字段',
+        type: 'textarea',
+        placeholder: '请输入备注',
         disabled: true,
+        rows: 3,
       },
-      fieldName: 'field',
-      label: '场景字段',
-      rules: 'required',
+      fieldName: 'remark',
+      label: '备注',
+      rules: z
+        .string()
+        .trim()
+        .min(0, '请输入备注')
+        .max(100, '备注最多100个字符'),
     },
     {
       component: 'Select',
@@ -310,16 +328,31 @@ const [EditForm, editFormApi] = useVbenForm({
   wrapperClass: 'grid-cols-1',
 });
 
-// 场景详情
-function handleInfo(row: SceneInfo) {
-  // 这里可以打开编辑弹窗，目前先提示
-  ElMessage.info(`场景详情: ${row.sceneName}`);
-  drawerTitle.value = '场景详情';
-  currentEditingId.value = row.id;
+// 详情
+async function handleInfo(row: CustomInfo) {
+  drawerTitle.value = '自定义产品详情';
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  editFormApi.setValues(row);
+  const values = {
+    ...row,
+    valueFixed: row.value,
+    valueDataSource: row.value,
+  };
+  if (values.valueType === 'dataSource') {
+    const data = {
+      lineNo: values.lineNo,
+    };
+    const dataSourceList = await getDataSourceDropdownList(data);
+    dataSourceOptions.value = dataSourceList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+  } else {
+    dataSourceOptions.value = [];
+  }
+  editFormApi.setValues(values);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
     {
@@ -329,19 +362,45 @@ function handleInfo(row: SceneInfo) {
       },
     },
     {
-      fieldName: 'sceneNo',
+      fieldName: 'productName',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'sceneName',
+      fieldName: 'productNo',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'field',
+      fieldName: 'valueType',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'valueFixed',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.valueType === 'fixed'),
+    },
+    {
+      fieldName: 'valueDataSource',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.valueType === 'dataSource'),
+    },
+    {
+      fieldName: 'unit',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'remark',
       componentProps: {
         disabled: true,
       },
@@ -358,10 +417,9 @@ function handleInfo(row: SceneInfo) {
   editDrawerVisible.value = true;
 }
 
-// 新增场景
+// 新增
 function handleAdd() {
-  drawerTitle.value = '新增场景';
-  ElMessage.info(`新增场景`);
+  drawerTitle.value = '新增自定义产品';
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 设置部分字段可编辑
@@ -373,19 +431,46 @@ function handleAdd() {
       },
     },
     {
-      fieldName: 'sceneName',
+      fieldName: 'productName',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'sceneNo',
+      fieldName: 'productNo',
+      componentProps: {
+        disabled: false,
+      },
+      hide: true,
+    },
+    {
+      fieldName: 'valueType',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'field',
+      fieldName: 'valueFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: false,
+    },
+    {
+      fieldName: 'valueDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: true,
+    },
+    {
+      fieldName: 'unit',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'remark',
       componentProps: {
         disabled: false,
       },
@@ -399,18 +484,36 @@ function handleAdd() {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = true;
+  isEdit.value = false;
   editDrawerVisible.value = true;
 }
 
-// 编辑场景
-function handleEdit(row: SceneInfo) {
-  drawerTitle.value = '编辑场景';
-  ElMessage.info(`编辑场景: ${row.id}`);
-  currentEditingId.value = row.id;
+// 编辑
+async function handleEdit(row: CustomInfo) {
+  drawerTitle.value = '编辑自定义产品';
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  editFormApi.setValues(row);
+  const values = {
+    ...row,
+    valueFixed: row.value,
+    valueDataSource: row.value,
+  };
+  if (values.valueType === 'dataSource') {
+    const data = {
+      lineNo: values.lineNo,
+    };
+    const dataSourceList = await getDataSourceDropdownList(data);
+    dataSourceOptions.value = dataSourceList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+  } else {
+    dataSourceOptions.value = [];
+  }
+  editFormApi.setValues(values);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
     {
@@ -420,21 +523,48 @@ function handleEdit(row: SceneInfo) {
       },
     },
     {
-      fieldName: 'sceneName',
+      fieldName: 'productName',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'sceneNo',
+      fieldName: 'productNo',
       componentProps: {
         disabled: true,
       },
+      hide: true,
     },
     {
-      fieldName: 'field',
+      fieldName: 'valueType',
       componentProps: {
-        disabled: true,
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'valueFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.valueType === 'fixed'),
+    },
+    {
+      fieldName: 'valueDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.valueType === 'dataSource'),
+    },
+    {
+      fieldName: 'unit',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'remark',
+      componentProps: {
+        disabled: false,
       },
     },
     {
@@ -446,14 +576,19 @@ function handleEdit(row: SceneInfo) {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = false;
+  isEdit.value = true;
+  preValueType.value = row.valueType;
   editDrawerVisible.value = true;
 }
 
-// 生效场景
-async function handleValid(row: SceneInfo) {
+// 生效
+async function handleValid(row: CustomInfo) {
   try {
-    // await updateScene({ ...row, isValid: 1 });
-    ElMessage.success(`操作成功 生效${row.id}`);
+    const data = { id: row.id, isValid: 1 };
+    const resp = await updateProductValid(data);
+    ElMessage.success(resp);
+
     const values = await queryFormApi.getValues();
     gridApi.reload(values);
   } catch (error) {
@@ -461,37 +596,123 @@ async function handleValid(row: SceneInfo) {
   }
 }
 
-// 失效场景
-async function handleInvalid(row: SceneInfo) {
+// 失效
+async function handleInvalid(row: CustomInfo) {
   try {
-    // await updateScene({ ...row, isValid: 0 });
-    ElMessage.success(`操作成功 失效${row.id}`);
+    const data = { id: row.id, isValid: 0 };
+    const resp = await updateProductValid(data);
+    ElMessage.success(resp);
+
     const values = await queryFormApi.getValues();
     gridApi.reload(values);
   } catch (error) {
     console.error(error);
+  }
+}
+
+// 值变化
+async function handleValuesChange(values: any) {
+  if (
+    (isAdd.value || isEdit.value) &&
+    values.valueType &&
+    values.valueType !== preValueType.value
+  ) {
+    if (
+      values.valueType === 'fixed' &&
+      values.valueType !== preValueType.value
+    ) {
+      editFormApi.updateSchema([
+        {
+          fieldName: 'valueFixed',
+          componentProps: {
+            disabled: false,
+          },
+          hide: false,
+        },
+        {
+          fieldName: 'valueDataSource',
+          componentProps: {
+            disabled: false,
+          },
+          hide: true,
+        },
+      ]);
+      editFormApi.setFieldValue('valueFixed', '');
+    } else if (
+      values.valueType === 'dataSource' &&
+      values.valueType !== preValueType.value
+    ) {
+      editFormApi.updateSchema([
+        {
+          fieldName: 'valueFixed',
+          componentProps: {
+            disabled: false,
+          },
+          hide: true,
+        },
+        {
+          fieldName: 'valueDataSource',
+          componentProps: {
+            disabled: false,
+          },
+          hide: false,
+        },
+      ]);
+      editFormApi.setFieldValue('valueDataSource', '');
+      if (values.lineNo) {
+        const data = {
+          lineNo: values.lineNo,
+        };
+        const dataSourceList = await getDataSourceDropdownList(data);
+        dataSourceOptions.value = dataSourceList.map((item) => ({
+          label: item.key,
+          value: item.value,
+        }));
+      } else {
+        dataSourceOptions.value = [];
+      }
+    }
+    preValueType.value = values.valueType;
   }
 }
 
 // 保存
 async function handleSaveEdit(values: any) {
-  // if (!currentEditingId.value) return;
-
   try {
-    // 构建更新数据
-    const updateData = {
-      id: currentEditingId.value,
-      lineNo: values.lineNo,
-      sceneName: values.sceneName,
-      sceneNo: values.sceneNo,
-      field: values.field,
-      isValid: values.isValid,
-    };
+    if (isAdd.value) {
+      const insertData = {
+        lineNo: values.lineNo,
+        productName: values.productName,
+        valueType: values.valueType,
+        value:
+          values.valueType === 'fixed'
+            ? values.valueFixed
+            : values.valueDataSource,
+        unit: values.unit,
+        remark: values.remark,
+        isValid: values.isValid,
+      };
+      console.log(insertData);
+    }
 
-    // 调用更新API
-    // await updateScene(currentEditingId.value, updateData);
-
-    ElMessage.success(`场景更新成功${updateData.sceneName}`);
+    if (isEdit.value) {
+      const updateData = {
+        id: currentEditing.value?.id,
+        lineNo: values.lineNo,
+        productName: values.productName,
+        productNo: currentEditing.value?.productNo,
+        valueType: values.valueType,
+        value:
+          values.valueType === 'fixed'
+            ? values.valueFixed
+            : values.valueDataSource,
+        unit: values.unit,
+        remark: values.remark,
+        version: currentEditing.value?.version,
+        isValid: values.isValid,
+      };
+      console.log(updateData);
+    }
 
     // 关闭弹窗
     editDrawerVisible.value = false;
@@ -501,18 +722,34 @@ async function handleSaveEdit(values: any) {
 
     // 重置表单
     await editFormApi.resetForm();
-    currentEditingId.value = null;
+    currentEditing.value = null;
   } catch (error) {
-    ElMessage.error('场景更新失败');
-    console.error('场景更新失败:', error);
+    ElMessage.error('自定义产品操作失败');
+    console.error('自定义产品操作失败:', error);
+  }
+}
+
+// 重置
+async function handleResetEdit() {
+  if (isAdd.value) {
+    editFormApi.resetForm();
+  }
+  if (isEdit.value) {
+    const data = {
+      ...currentEditing.value,
+      valueFixed: currentEditing.value?.value,
+      valueDataSource: currentEditing.value?.value,
+    };
+    editFormApi.setValues(data || {});
   }
 }
 
 // 取消编辑
 function handleCancelEdit() {
-  ElMessage.success('取消');
   editDrawerVisible.value = false;
-  currentEditingId.value = null;
+  currentEditing.value = null;
+  isAdd.value = false;
+  isEdit.value = false;
   editFormApi.resetForm();
 }
 
@@ -526,7 +763,7 @@ function handleDrawerClose(done: () => void) {
 <template>
   <Page description="自定义产品管理">
     <div>
-      <div class="flex">
+      <div class="w-full">
         <QueryForm />
       </div>
       <div class="mb-4 mt-4 flex justify-start pl-[15px]">

@@ -566,7 +566,7 @@ function handleAdd() {
 }
 
 // 编辑
-function handleEdit(row: InterestInfo) {
+async function handleEdit(row: InterestInfo) {
   drawerTitle.value = '编辑利率产品';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
@@ -577,6 +577,18 @@ function handleEdit(row: InterestInfo) {
     valueFixed: row.value,
     valueDataSource: row.value,
   };
+  if (values.valueType === 'dataSource') {
+    const data = {
+      lineNo: values.lineNo,
+    };
+    const dataSourceList = await getDataSourceDropdownList(data);
+    dataSourceOptions.value = dataSourceList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+  } else {
+    dataSourceOptions.value = [];
+  }
   editFormApi.setValues(values);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
@@ -642,6 +654,7 @@ function handleEdit(row: InterestInfo) {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = false;
   isEdit.value = true;
+  preValueType.value = row.valueType;
   editDrawerVisible.value = true;
 }
 
@@ -746,6 +759,7 @@ async function handleSaveEdit(values: any) {
       const insertData = {
         lineNo: values.lineNo,
         productName: values.productName,
+        type: 'interest',
         valueType: values.valueType,
         value:
           values.valueType === 'fixed'
@@ -755,8 +769,6 @@ async function handleSaveEdit(values: any) {
         remark: values.remark,
         isValid: values.isValid,
       };
-      console.log(insertData);
-
       const resp = await createInterest(insertData);
       ElMessage.success(resp);
     }
@@ -767,6 +779,7 @@ async function handleSaveEdit(values: any) {
         lineNo: values.lineNo,
         productName: values.productName,
         productNo: currentEditing.value?.productNo,
+        type: 'interest',
         valueType: values.valueType,
         value:
           values.valueType === 'fixed'
@@ -777,8 +790,6 @@ async function handleSaveEdit(values: any) {
         version: currentEditing.value?.version,
         isValid: values.isValid,
       };
-      console.log(updateData);
-
       const resp = await updateInterest(updateData);
       ElMessage.success(resp);
     }

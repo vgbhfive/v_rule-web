@@ -82,3 +82,21 @@ export async function getInterestUnitTypes() {
     '/enum/interestUnitType',
   );
 }
+
+/**
+ * 获取账期产品账期类型下拉列表
+ * @returns
+ */
+export async function getPeriodTypes() {
+  return requestClient.get<{ name: string; type: string }[]>(
+    '/enum/periodType',
+  );
+}
+
+/**
+ * 获取策略集模式下拉列表
+ * @returns 
+ */
+export async function getStrategyModelTypes() {
+  return requestClient.get<{ name: string; model: string }[]>('/enum/strategyModel');
+}
