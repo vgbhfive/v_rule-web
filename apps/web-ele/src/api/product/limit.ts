@@ -26,7 +26,10 @@ export interface LimitParams {
  * 获取额度产品列表
  */
 export async function getLimitList(params: Recordable<any>) {
-  return requestClient.post<LimitInfo[]>('/product/limit/list', { ...params, type: 'limit' });
+  return requestClient.post<LimitInfo[]>('/product/limit/list', {
+    ...params,
+    type: 'limit',
+  });
 }
 
 /**

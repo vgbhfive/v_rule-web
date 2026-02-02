@@ -95,8 +95,18 @@ export async function getPeriodTypes() {
 
 /**
  * 获取策略集模式下拉列表
- * @returns 
+ * @returns
  */
 export async function getStrategyModelTypes() {
-  return requestClient.get<{ name: string; model: string }[]>('/enum/strategyModel');
+  return requestClient.get<{ model: string; name: string }[]>(
+    '/enum/strategyModel',
+  );
+}
+
+/**
+ * 获取场景类型下拉列表
+ * @returns
+ */
+export async function getSceneTypes() {
+  return requestClient.get<{ name: string; type: string }[]>('/enum/sceneType');
 }

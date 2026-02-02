@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { SceneInfo, SceneParams } from '#/api/system';
+import type { DivideInfo } from '#/api/divide';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -10,10 +10,22 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getLineDropdownList, getSceneList } from '#/api/system';
+import {
+  createDivide,
+  getDivideDetail,
+  getDivideList,
+  updateDivide,
+  updateDivideValid,
+} from '#/api/divide';
+import { getProductDropdownList } from '#/api/product';
+import { getStrategyDropdownList } from '#/api/strategy';
+import { getLineDropdownList } from '#/api/system';
+import { getSceneDropdownList } from '#/api/system/scene';
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
+const sceneMap = ref<Record<string, string>>({});
+const strategyMap = ref<Record<string, string>>({});
 
 onMounted(async () => {
   const list = await getLineDropdownList();
@@ -26,6 +38,22 @@ onMounted(async () => {
     label: item.key,
     value: item.value,
   }));
+
+  // 场景
+  const sceneList = await getSceneDropdownList({});
+  const sceneNewMap: Record<string, string> = {};
+  for (const item of sceneList) {
+    sceneNewMap[item.value] = item.key;
+  }
+  sceneMap.value = sceneNewMap;
+
+  // 策略集
+  const strategyList = await getStrategyDropdownList({});
+  const strategyNewMap: Record<string, string> = {};
+  for (const item of strategyList) {
+    strategyNewMap[item.value] = item.key;
+  }
+  strategyMap.value = strategyNewMap;
 });
 
 // 查询表单配置
@@ -44,6 +72,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
       componentProps: {
         options: lineOptions,
         placeholder: '业务线名称',
+        clearable: true,
       },
       fieldName: 'lineNo',
       label: '业务线',
@@ -51,25 +80,19 @@ const [QueryForm, queryFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '场景名称',
+        placeholder: '分流器名称',
+        clearable: true,
       },
-      fieldName: 'sceneName',
+      fieldName: 'divideName',
       label: '名称',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '场景字段',
+        placeholder: '分流器编码',
+        clearable: true,
       },
-      fieldName: 'field',
-      label: '字段',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '场景编码',
-      },
-      fieldName: 'sceneNo',
+      fieldName: 'divideNo',
       label: '编码',
     },
     {
@@ -77,6 +100,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
       componentProps: {
         allowClear: true,
         filterOption: true,
+        clearable: true,
         options: [
           {
             label: '生效',
@@ -101,56 +125,71 @@ const [QueryForm, queryFormApi] = useVbenForm({
 });
 
 // 表单提交处理
-async function onSubmit(values: SceneParams) {
+async function onSubmit(values: any) {
   await gridApi.reload({ ...values });
 }
 
 // 表格配置
-const gridOptions: VxeGridProps<SceneInfo> = {
+const gridOptions: VxeGridProps<DivideInfo> = {
   columns: [
-    { field: 'id', title: 'ID', width: 80 },
+    { type: 'seq', title: '序号', width: 50 },
     {
       field: 'lineNo',
-      title: '业务线名称',
+      title: '业务线',
       slots: {
-        default: ({ row }: { row: SceneInfo }) =>
+        default: ({ row }: { row: DivideInfo }) =>
           lineMap.value[row.lineNo] || row.lineNo,
       },
     },
-    { field: 'sceneName', title: '场景名称' },
-    { field: 'sceneNo', title: '场景编码' },
-    { field: 'field', title: '字段', showOverflow: true, width: 250 },
+    {
+      field: 'sceneNo',
+      title: '所属场景',
+      slots: {
+        default: ({ row }: { row: DivideInfo }) =>
+          sceneMap.value[row.sceneNo] || row.sceneNo,
+      },
+    },
+    { field: 'divideName', title: '名称' },
+    { field: 'divideNo', title: '编码' },
+    {
+      field: 'accessStrategyNo',
+      title: '准入策略集',
+      slots: {
+        default: ({ row }: { row: DivideInfo }) =>
+          strategyMap.value[row.accessStrategyNo] || row.accessStrategyNo,
+      },
+    },
+    {
+      field: 'riskStrategyNo',
+      title: '风控策略集',
+      slots: {
+        default: ({ row }: { row: DivideInfo }) =>
+          strategyMap.value[row.riskStrategyNo] || row.riskStrategyNo,
+      },
+    },
+    { field: 'priority', title: '优先级', width: 60 },
     {
       field: 'isValid',
       title: '状态',
+      width: 50,
       formatter: ({ cellValue }) => {
         return cellValue === 1 ? '生效' : '失效';
       },
     },
     { field: 'createAt', title: '创建时间' },
+    { field: 'deployAt', title: '部署时间' },
     {
       title: '操作',
       width: 200,
-      // cellRender: {
-      //   name: 'CellOperation',
-      //   props: {
-      //     onEdit: (row: SceneInfo) => {
-      //       handleEdit(row);
-      //     },
-      //     onInfo: (row: SceneInfo) => {
-      //       handleInfo(row);
-      //     },
-      //   },
-      // },
       slots: {
-        default: ({ row: sceneInfo }: { row: SceneInfo }) => {
+        default: ({ row: divideInfo }: { row: DivideInfo }) => {
           const buttons = [
             h(
               ElButton,
               {
                 type: 'primary',
                 size: 'small',
-                onClick: () => handleEdit(sceneInfo),
+                onClick: () => handleEdit(divideInfo),
               },
               { default: () => '编辑' },
             ),
@@ -159,20 +198,20 @@ const gridOptions: VxeGridProps<SceneInfo> = {
               {
                 type: 'info',
                 size: 'small',
-                onClick: () => handleInfo(sceneInfo),
+                onClick: () => handleInfo(divideInfo),
               },
               { default: () => '详情' },
             ),
           ];
 
-          if (sceneInfo.isValid === 0) {
+          if (divideInfo.isValid === 0) {
             buttons.push(
               h(
                 ElButton,
                 {
                   type: 'success',
                   size: 'small',
-                  onClick: () => handleValid(sceneInfo),
+                  onClick: () => handleValid(divideInfo),
                 },
                 { default: () => '生效' },
               ),
@@ -184,7 +223,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
                 {
                   type: 'warning',
                   size: 'small',
-                  onClick: () => handleInvalid(sceneInfo),
+                  onClick: () => handleInvalid(divideInfo),
                 },
                 { default: () => '失效' },
               ),
@@ -213,7 +252,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
           currPage: page.currentPage,
           limit: page.pageSize,
         };
-        return await getSceneList(params);
+        return await getDivideList(params);
       },
     },
   },
@@ -222,7 +261,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
   },
 };
 
-const gridEvents: VxeGridListeners<SceneInfo> = {
+const gridEvents: VxeGridListeners<DivideInfo> = {
   // 可以添加表格事件监听
 };
 
@@ -230,8 +269,17 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditingId = ref<null | number>(null);
+const currentEditing = ref<DivideInfo | null>(null);
 const drawerTitle = ref('');
+const preLineNo = ref('');
+const isAdd = ref(false);
+const isEdit = ref(false);
+const isInfo = ref(false);
+const sceneDropdownListOptions = ref<{ label: string; value: string }[]>([]);
+const strategyDropdownListOptions = ref<{ label: string; value: string }[]>([]);
+const limitProductOptions = ref<{ label: string; value: string }[]>([]);
+const periodProductOptions = ref<{ label: string; value: string }[]>([]);
+const interestProductOptions = ref<{ label: string; value: string }[]>([]);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -241,6 +289,7 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
+  handleValuesChange,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -255,33 +304,96 @@ const [EditForm, editFormApi] = useVbenForm({
       rules: 'required',
     },
     {
-      component: 'Input',
+      component: 'ApiSelect',
       componentProps: {
-        placeholder: '请输入场景名称',
-      },
-      fieldName: 'sceneName',
-      label: '场景名称',
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入场景编码',
+        options: sceneDropdownListOptions,
+        placeholder: '请选择所属场景',
         disabled: true,
       },
       fieldName: 'sceneNo',
-      label: '场景编码',
+      label: '所属场景',
       rules: 'required',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入场景字段',
+        placeholder: '请输入分流器名称',
+      },
+      fieldName: 'divideName',
+      label: '分流器名称',
+      rules: 'required',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入分流器编码',
         disabled: true,
       },
-      fieldName: 'field',
-      label: '场景字段',
+      fieldName: 'divideNo',
+      label: '分流器编码',
       rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: strategyDropdownListOptions,
+        placeholder: '请选择准入策略集',
+        disabled: true,
+      },
+      fieldName: 'accessStrategyNo',
+      label: '准入策略集',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: strategyDropdownListOptions,
+        placeholder: '请选择风控策略集',
+        disabled: true,
+      },
+      fieldName: 'riskStrategyNo',
+      label: '风控策略集',
+      rules: 'required',
+    },
+    {
+      component: 'InputNumber',
+      componentProps: {
+        placeholder: '请输入优先级',
+        disabled: true,
+      },
+      fieldName: 'priority',
+      label: '优先级',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: limitProductOptions,
+        placeholder: '请选择额度产品',
+        disabled: true,
+      },
+      fieldName: 'limitProductNo',
+      label: '额度产品',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: periodProductOptions,
+        placeholder: '请选择账期产品',
+        disabled: true,
+      },
+      fieldName: 'periodProductNo',
+      label: '账期产品',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: interestProductOptions,
+        placeholder: '请选择利率产品',
+        disabled: true,
+      },
+      fieldName: 'interestProductNo',
+      label: '利率产品',
     },
     {
       component: 'Select',
@@ -310,16 +422,41 @@ const [EditForm, editFormApi] = useVbenForm({
   wrapperClass: 'grid-cols-1',
 });
 
-// 场景详情
-function handleInfo(row: SceneInfo) {
-  // 这里可以打开编辑弹窗，目前先提示
-  ElMessage.info(`场景详情: ${row.sceneName}`);
+// 详情
+async function handleInfo(row: DivideInfo) {
   drawerTitle.value = '场景详情';
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  editFormApi.setValues(row);
+  preLineNo.value = row.lineNo;
+  const detail = await getDivideDetail(row.id);
+  const values = {
+    ...detail,
+    limitProductNo: ' ',
+    periodProductNo: ' ',
+    interestProductNo: ' ',
+  };
+  if (detail.productEntityList) {
+    detail.productEntityList.forEach((item) => {
+      switch (item.type) {
+        case 'interest': {
+          values.interestProductNo = item.productNo;
+          break;
+        }
+        case 'limit': {
+          values.limitProductNo = item.productNo;
+          break;
+        }
+        case 'period': {
+          values.periodProductNo = item.productNo;
+          break;
+        }
+        // No default
+      }
+    });
+  }
+  editFormApi.setValues(values);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
     {
@@ -335,13 +472,49 @@ function handleInfo(row: SceneInfo) {
       },
     },
     {
-      fieldName: 'sceneName',
+      fieldName: 'divideName',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'field',
+      fieldName: 'divideNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'accessStrategyNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'riskStrategyNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'priority',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'limitProductNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'periodProductNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'interestProductNo',
       componentProps: {
         disabled: true,
       },
@@ -355,13 +528,15 @@ function handleInfo(row: SceneInfo) {
   ]);
   // 设置操作按钮不可见
   editFormApi.setState({ showDefaultActions: false });
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = true;
   editDrawerVisible.value = true;
 }
 
-// 新增场景
+// 新增
 function handleAdd() {
-  drawerTitle.value = '新增场景';
-  ElMessage.info(`新增场景`);
+  drawerTitle.value = '新增分流器';
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 设置部分字段可编辑
@@ -373,19 +548,56 @@ function handleAdd() {
       },
     },
     {
-      fieldName: 'sceneName',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
       fieldName: 'sceneNo',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'field',
+      fieldName: 'divideName',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'divideNo',
+      componentProps: {
+        disabled: false,
+      },
+      hide: true,
+    },
+    {
+      fieldName: 'accessStrategyNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'riskStrategyNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'priority',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'limitProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'periodProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'interestProductNo',
       componentProps: {
         disabled: false,
       },
@@ -399,18 +611,46 @@ function handleAdd() {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = true;
+  isEdit.value = false;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
-// 编辑场景
-function handleEdit(row: SceneInfo) {
+// 编辑
+async function handleEdit(row: DivideInfo) {
   drawerTitle.value = '编辑场景';
-  ElMessage.info(`编辑场景: ${row.id}`);
-  currentEditingId.value = row.id;
+  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  editFormApi.setValues(row);
+  const detail = await getDivideDetail(row.id);
+  const values = {
+    ...detail,
+    limitProductNo: ' ',
+    periodProductNo: ' ',
+    interestProductNo: ' ',
+  };
+  if (detail.productEntityList) {
+    detail.productEntityList.forEach((item) => {
+      switch (item.type) {
+        case 'interest': {
+          values.interestProductNo = item.productNo;
+          break;
+        }
+        case 'limit': {
+          values.limitProductNo = item.productNo;
+          break;
+        }
+        case 'period': {
+          values.periodProductNo = item.productNo;
+          break;
+        }
+        // No default
+      }
+    });
+  }
+  editFormApi.setValues(values);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
     {
@@ -420,21 +660,57 @@ function handleEdit(row: SceneInfo) {
       },
     },
     {
-      fieldName: 'sceneName',
+      fieldName: 'sceneNo',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'sceneNo',
+      fieldName: 'divideName',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'divideNo',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'field',
+      fieldName: 'accessStrategyNo',
       componentProps: {
-        disabled: true,
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'riskStrategyNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'priority',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'limitProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'periodProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'interestProductNo',
+      componentProps: {
+        disabled: false,
       },
     },
     {
@@ -446,14 +722,19 @@ function handleEdit(row: SceneInfo) {
   ]);
   // 设置操作按钮可见
   editFormApi.setState({ showDefaultActions: true });
+  isAdd.value = false;
+  isEdit.value = true;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
-// 生效场景
-async function handleValid(row: SceneInfo) {
+// 生效
+async function handleValid(row: DivideInfo) {
   try {
-    // await updateScene({ ...row, isValid: 1 });
-    ElMessage.success(`操作成功 生效${row.id}`);
+    const data = { id: row.id, isValid: 1 };
+    const resp = await updateDivideValid(data);
+    ElMessage.success(resp);
+
     const values = await queryFormApi.getValues();
     gridApi.reload(values);
   } catch (error) {
@@ -461,11 +742,13 @@ async function handleValid(row: SceneInfo) {
   }
 }
 
-// 失效场景
-async function handleInvalid(row: SceneInfo) {
+// 失效
+async function handleInvalid(row: DivideInfo) {
   try {
-    // await updateScene({ ...row, isValid: 0 });
-    ElMessage.success(`操作成功 失效${row.id}`);
+    const data = { id: row.id, isValid: 0 };
+    const resp = await updateDivideValid(data);
+    ElMessage.success(resp);
+
     const values = await queryFormApi.getValues();
     gridApi.reload(values);
   } catch (error) {
@@ -475,23 +758,78 @@ async function handleInvalid(row: SceneInfo) {
 
 // 保存
 async function handleSaveEdit(values: any) {
-  // if (!currentEditingId.value) return;
-
   try {
-    // 构建更新数据
-    const updateData = {
-      id: currentEditingId.value,
-      lineNo: values.lineNo,
-      sceneName: values.sceneName,
-      sceneNo: values.sceneNo,
-      field: values.field,
-      isValid: values.isValid,
-    };
+    if (isAdd.value) {
+      const productEntityList = [];
+      if (values.limitProductNo) {
+        productEntityList.push({
+          productNo: values.limitProductNo,
+          type: 'limit',
+        });
+      }
+      if (values.periodProductNo) {
+        productEntityList.push({
+          productNo: values.periodProductNo,
+          type: 'period',
+        });
+      }
+      if (values.interestProductNo) {
+        productEntityList.push({
+          productNo: values.interestProductNo,
+          type: 'interest',
+        });
+      }
+      const insertData = {
+        lineNo: values.lineNo,
+        sceneNo: values.sceneNo,
+        divideName: values.divideName,
+        accessStrategyNo: values.accessStrategyNo,
+        riskStrategyNo: values.riskStrategyNo,
+        priority: values.priority,
+        productEntityList,
+        isValid: values.isValid,
+      };
+      const resp = await createDivide(insertData);
+      ElMessage.success(resp);
+    }
 
-    // 调用更新API
-    // await updateScene(currentEditingId.value, updateData);
-
-    ElMessage.success(`场景更新成功${updateData.sceneName}`);
+    if (isEdit.value) {
+      const productEntityList = [];
+      if (values.limitProductNo) {
+        productEntityList.push({
+          productNo: values.limitProductNo,
+          type: 'limit',
+        });
+      }
+      if (values.periodProductNo) {
+        productEntityList.push({
+          productNo: values.periodProductNo,
+          type: 'period',
+        });
+      }
+      if (values.interestProductNo) {
+        productEntityList.push({
+          productNo: values.interestProductNo,
+          type: 'interest',
+        });
+      }
+      const updateData = {
+        id: currentEditing.value?.id,
+        lineNo: values.lineNo,
+        sceneNo: currentEditing.value?.sceneNo,
+        divideName: values.divideName,
+        divideNo: currentEditing.value?.divideNo,
+        accessStrategyNo: values.accessStrategyNo,
+        riskStrategyNo: values.riskStrategyNo,
+        priority: values.priority,
+        productEntityList,
+        version: currentEditing.value?.version,
+        isValid: values.isValid,
+        createAt: currentEditing.value?.createAt,
+      };
+      const resp = await updateDivide(updateData);
+      ElMessage.success(resp);
+    }
 
     // 关闭弹窗
     editDrawerVisible.value = false;
@@ -501,18 +839,140 @@ async function handleSaveEdit(values: any) {
 
     // 重置表单
     await editFormApi.resetForm();
-    currentEditingId.value = null;
+    currentEditing.value = null;
   } catch (error) {
-    ElMessage.error('场景更新失败');
-    console.error('场景更新失败:', error);
+    ElMessage.error('分流器操作失败');
+    console.error('分流器操作失败:', error);
+  }
+}
+
+// 值变化
+async function handleValuesChange(values: any) {
+  if (isAdd.value || isEdit.value) {
+    if (values.lineNo && values.lineNo !== preLineNo.value) {
+      const data = {
+        lineNo: values.lineNo,
+      };
+      const strategyDropdownList = await getStrategyDropdownList(data);
+      strategyDropdownListOptions.value = strategyDropdownList.map((item) => ({
+        label: item.key,
+        value: item.value,
+      }));
+
+      // 场景
+      const sceneData = {
+        lineNo: values.lineNo,
+      };
+      const sceneDropdownList = await getSceneDropdownList(sceneData);
+      sceneDropdownListOptions.value = sceneDropdownList.map((item) => ({
+        label: item.key,
+        value: item.value,
+      }));
+
+      // 额度
+      const limitData = {
+        lineNo: values.lineNo,
+        type: 'limit',
+      };
+      const limitDropdownList = await getProductDropdownList(limitData);
+      limitProductOptions.value = limitDropdownList.map((item) => ({
+        label: item.key,
+        value: item.value,
+      }));
+
+      // 账期
+      const periodData = {
+        lineNo: values.lineNo,
+        type: 'period',
+      };
+      const periodDropdownList = await getProductDropdownList(periodData);
+      periodProductOptions.value = periodDropdownList.map((item) => ({
+        label: item.key,
+        value: item.value,
+      }));
+
+      // 利率
+      const interestData = {
+        lineNo: values.lineNo,
+        type: 'interest',
+      };
+      const interestDropdownList = await getProductDropdownList(interestData);
+      interestProductOptions.value = interestDropdownList.map((item) => ({
+        label: item.key,
+        value: item.value,
+      }));
+
+      preLineNo.value = values.lineNo;
+    } else if (
+      values.riskStrategyNo &&
+      values.riskStrategyNo === values.accessStrategyNo
+    ) {
+      ElMessage.warning('准入策略集和风控策略集不能配置相同');
+      editFormApi.setFieldValue('riskStrategyNo', '');
+    }
+  }
+  if (isInfo.value) {
+    const data = {
+      lineNo: currentEditing.value?.lineNo,
+    };
+    const strategyDropdownList = await getStrategyDropdownList(data);
+    strategyDropdownListOptions.value = strategyDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    // 场景
+    const sceneData = {
+      lineNo: currentEditing.value?.lineNo,
+    };
+    const sceneDropdownList = await getSceneDropdownList(sceneData);
+    sceneDropdownListOptions.value = sceneDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    // 额度
+    const limitData = {
+      lineNo: currentEditing.value?.lineNo,
+      type: 'limit',
+    };
+    const limitDropdownList = await getProductDropdownList(limitData);
+    limitProductOptions.value = limitDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    // 账期
+    const periodData = {
+      lineNo: currentEditing.value?.lineNo,
+      type: 'period',
+    };
+    const periodDropdownList = await getProductDropdownList(periodData);
+    periodProductOptions.value = periodDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    // 利率
+    const interestData = {
+      lineNo: currentEditing.value?.lineNo,
+      type: 'interest',
+    };
+    const interestDropdownList = await getProductDropdownList(interestData);
+    interestProductOptions.value = interestDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
   }
 }
 
 // 取消编辑
 function handleCancelEdit() {
-  ElMessage.success('取消');
   editDrawerVisible.value = false;
-  currentEditingId.value = null;
+  currentEditing.value = null;
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = false;
   editFormApi.resetForm();
 }
 
@@ -526,7 +986,7 @@ function handleDrawerClose(done: () => void) {
 <template>
   <Page description="分流器管理">
     <div>
-      <div class="flex">
+      <div class="w-full">
         <QueryForm />
       </div>
       <div class="mb-4 mt-4 flex justify-start pl-[15px]">

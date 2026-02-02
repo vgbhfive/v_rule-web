@@ -4,7 +4,7 @@ import type { StrategyInfo, StrategyParams } from '#/api/strategy';
 
 import { h, onMounted, ref } from 'vue';
 
-import { Page, z } from '@vben/common-ui';
+import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 
@@ -12,9 +12,11 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getStrategyModelTypes, getValueTypes } from '#/api/enums';
 import {
+  createStrategy,
+  getStrategyDetail,
   getStrategyList,
+  updateStrategy,
   updateStrategyValid,
-  getStrategyDetail
 } from '#/api/strategy';
 import { getLineDropdownList } from '#/api/system';
 
@@ -150,7 +152,14 @@ const gridOptions: VxeGridProps<StrategyInfo> = {
     { field: 'strategyName', title: '名称' },
     { field: 'strategyNo', title: '编码' },
     { field: 'sceneNo', title: '场景' },
-    { field: 'model', title: '模式', slots: { default: ({ row }: { row: StrategyInfo }) => modelMap.value[row.model] || row.model } },
+    {
+      field: 'model',
+      title: '模式',
+      slots: {
+        default: ({ row }: { row: StrategyInfo }) =>
+          modelMap.value[row.model] || row.model,
+      },
+    },
     {
       field: 'isValid',
       title: '状态',
@@ -160,6 +169,7 @@ const gridOptions: VxeGridProps<StrategyInfo> = {
       },
     },
     { field: 'createAt', title: '创建时间' },
+    { field: 'deployAt', title: '部署时间' },
     {
       title: '操作',
       width: 200,
@@ -251,7 +261,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditing = ref<StrategyInfo | null>(null);
+const currentEditing = ref<null | StrategyInfo>(null);
 const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
@@ -331,12 +341,10 @@ async function handleInfo(row: StrategyInfo) {
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
-  // 填充表单数据
-  editFormApi.setValues(row);
   // 获取策略集详情
   const detail = await getStrategyDetail(row.id);
-  console.log(detail);
-
+  // 填充表单数据
+  editFormApi.setValues(detail);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
     {
@@ -481,7 +489,7 @@ async function handleInvalid(row: StrategyInfo) {
 
 // 值变化
 async function handleValuesChange(values: any) {
-  console.log(values);
+  console.log('value change:', values);
 }
 
 // 保存
@@ -494,6 +502,8 @@ async function handleSaveEdit(values: any) {
         isValid: values.isValid,
       };
       console.log(insertData);
+      const resp = await createStrategy(insertData);
+      ElMessage.success(resp);
     }
 
     if (isEdit.value) {
@@ -506,6 +516,8 @@ async function handleSaveEdit(values: any) {
         isValid: values.isValid,
       };
       console.log(updateData);
+      const resp = await updateStrategy(updateData);
+      ElMessage.success(resp);
     }
 
     // 关闭弹窗

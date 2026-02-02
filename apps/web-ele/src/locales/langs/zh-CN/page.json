@@ -42,7 +42,7 @@
   },
   "deploy": {
     "title": "发布管理",
-    "deploy": "发布上线"
+    "deploy": "发布"
   },
   "monitor": {
     "title": "监控管理",

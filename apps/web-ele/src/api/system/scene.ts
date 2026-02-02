@@ -58,3 +58,15 @@ export async function updateScene(params: Recordable<any>) {
 export async function updateSceneValid(params: Recordable<any>) {
   return requestClient.post(`/scene/valid`, params);
 }
+
+/**
+ * 获取场景下拉列表
+ * @param params
+ * @returns
+ */
+export async function getSceneDropdownList(params: Recordable<any>) {
+  return requestClient.post<{ key: string; value: string }[]>(
+    '/scene/dropdown/list',
+    params,
+  );
+}
