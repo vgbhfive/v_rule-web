@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import type { Recordable } from '@vben/types';
-
 import type { VbenFormSchema } from '@vben-core/form-ui';
 
 import { computed, reactive } from 'vue';
 
 import { useVbenForm } from '@vben-core/form-ui';
-import { VbenButton } from '@vben-core/shadcn-ui';
 
 interface Props {
   formSchema?: VbenFormSchema[];
@@ -15,10 +12,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   formSchema: () => [],
 });
-
-const emit = defineEmits<{
-  submit: [Recordable<any>];
-}>();
 
 const [Form, formApi] = useVbenForm(
   reactive({
@@ -34,23 +27,12 @@ const [Form, formApi] = useVbenForm(
   }),
 );
 
-async function handleSubmit() {
-  const { valid } = await formApi.validate();
-  const values = await formApi.getValues();
-  if (valid) {
-    emit('submit', values);
-  }
-}
-
 defineExpose({
   getFormApi: () => formApi,
 });
 </script>
 <template>
-  <div @keydown.enter.prevent="handleSubmit">
+  <div>
     <Form />
-    <VbenButton type="submit" class="mt-4" @click="handleSubmit">
-      更新基本信息
-    </VbenButton>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { InterestInfo, InterestParams, LimitInfo } from '#/api/product';
+import type { LimitInfo } from '#/api/product';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -14,8 +14,8 @@ import { getDataSourceDropdownList } from '#/api/data';
 import { getInterestUnitTypes, getValueTypes } from '#/api/enums';
 import {
   createLimit,
-  updateLimit,
   getLimitList,
+  updateLimit,
   updateProductValid,
 } from '#/api/product';
 import { getLineDropdownList } from '#/api/system';
@@ -722,7 +722,7 @@ async function handleSaveEdit(values: any) {
       const insertData = {
         lineNo: values.lineNo,
         productName: values.productName,
-        type: 'limit',  
+        type: 'limit',
         valueType: values.valueType,
         value:
           values.valueType === 'fixed'

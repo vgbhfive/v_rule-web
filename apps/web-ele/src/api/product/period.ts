@@ -27,7 +27,10 @@ export interface PeriodParams {
  * 获取账期产品列表
  */
 export async function getPeriodList(params: Recordable<any>) {
-  return requestClient.post<PeriodInfo[]>('/product/period/list', { ...params, type: 'period' });
+  return requestClient.post<PeriodInfo[]>('/product/period/list', {
+    ...params,
+    type: 'period',
+  });
 }
 
 /**
@@ -47,4 +50,3 @@ export async function createPeriod(params: Recordable<any>) {
 export async function updatePeriod(params: Recordable<any>) {
   return requestClient.post('/product/period/update', params);
 }
-

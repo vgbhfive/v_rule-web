@@ -5,7 +5,7 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     meta: {
-      icon: 'ion:settings-outline',
+      icon: 'lucide:git-branch',
       keepAlive: true,
       order: 1002,
       title: $t('page.rule.title'),

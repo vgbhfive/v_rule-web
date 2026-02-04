@@ -3,7 +3,7 @@ import type { TabsPaneContext } from 'element-plus';
 
 import type { DeployDoneInfo, DeployInfo } from '#/api/deploy';
 
-import { h, onMounted, ref } from 'vue';
+import { computed, h, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 
@@ -333,6 +333,13 @@ async function handleDeployDiff(deployInfo: DeployInfo) {
     no: deployInfo.no,
   });
   console.log(diffInfo);
+  if (diffInfo.deployStatus === 1) {
+    ElMessage.success('首次上线，无 DIFF 展示');
+  } else {
+    editDrawerVisible.value = true;
+    diffData.value = diffInfo;
+    currentDiffInfo.value = deployInfo;
+  }
 }
 
 // 回滚
@@ -358,6 +365,58 @@ async function loadDeployData(params?: any) {
 async function loadDeployDoneData(params?: any) {
   deployDoneTableApi.reload({ ...params });
 }
+
+// DIFF 展示框标记
+const editDrawerVisible = ref(false);
+const diffData = ref<DeployDoneInfo | null>(null);
+const currentDiffInfo = ref<DeployInfo | null>(null);
+const diffCategoryMap = {
+  scene: '场景变更',
+  divide: '分流器变更',
+  product: '产品变更',
+  strategy: '策略集变更',
+  rule: '规则变更',
+  monitor: '监控变更',
+  deployStatus: '发布状态',
+};
+
+const filteredDiffs = computed(() => {
+  if (!diffData.value) {
+    // 即使没有 diffData，也要展示所有类别
+    const result: Record<string, any[]> = {};
+    for (const key of Object.keys(diffCategoryMap)) {
+      result[key] = [];
+    }
+    return result;
+  }
+  const data = diffData.value;
+  const result: Record<string, any[]> = {};
+
+  for (const key of Object.keys(diffCategoryMap)) {
+    const typedKey = key as keyof typeof data;
+    if (
+      Object.prototype.hasOwnProperty.call(data, typedKey) &&
+      Array.isArray(data[typedKey]) &&
+      data[typedKey].length > 0
+    ) {
+      const details = data[typedKey] as diffDetail[];
+      const flattenedDetails = details.flatMap((item) => {
+        if (item.results && item.results.length > 0) {
+          return item.results.map((resultItem) => ({
+            no: item.no,
+            name: item.name,
+            results: resultItem,
+          }));
+        }
+        return [];
+      });
+      result[typedKey] = flattenedDetails;
+    } else {
+      result[typedKey] = [];
+    }
+  }
+  return result;
+});
 </script>
 
 <template>
@@ -373,5 +432,73 @@ async function loadDeployDoneData(params?: any) {
         </ElTabPane>
       </ElTabs>
     </div>
+
+    <!-- DIFF展示弹窗 -->
+    <ElDialog
+      v-model="editDrawerVisible"
+      title="变更详情"
+      width="70%"
+      :before-close="handleClose"
+      center
+    >
+      <div class="diff-content">
+        <details
+          v-for="(details, category) in filteredDiffs"
+          :key="category"
+          open
+          class="mb-4"
+        >
+          <summary class="cursor-pointer text-lg font-semibold">
+            {{ diffCategoryMap[category] }}
+          </summary>
+          <div class="p-4">
+            <ElTable
+              v-if="details.length > 0"
+              :data="details"
+              style="width: 100%"
+              border
+            >
+              <ElTableColumn label="编号" width="180">
+                <template #default="{ row }">
+                  {{ row.no }}
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="名称" width="180">
+                <template #default="{ row }">
+                  {{ row.name }}
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="变更项" width="180">
+                <template #default="{ row }">
+                  {{ row.results.name }}
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="旧值">
+                <template #default="{ row }">
+                  <pre
+                    class="whitespace-pre-wrap rounded bg-red-100 p-2 font-mono text-sm"
+                    >{{ row.results.oldValue }}</pre>
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="新值">
+                <template #default="{ row }">
+                  <pre
+                    class="whitespace-pre-wrap rounded bg-green-100 p-2 font-mono text-sm"
+                    >{{ row.results.newValue }}</pre>
+                </template>
+              </ElTableColumn>
+            </ElTable>
+            <div v-else>
+              <p>无变更</p>
+            </div>
+          </div>
+        </details>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <ElButton @click="editDrawerVisible = false">关闭</ElButton>
+        </span>
+      </template>
+    </ElDialog>
   </Page>
 </template>

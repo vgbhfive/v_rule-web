@@ -1,7 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import type { UserInfo } from '@vben/types';
+
+import { computed, onMounted, ref } from 'vue';
 
 import { ProfileSecuritySetting } from '@vben/common-ui';
+
+import { getUserInfoApi } from '#/api';
+
+const userInfo = ref<UserInfo>();
+
+onMounted(async () => {
+  const data = await getUserInfoApi();
+  userInfo.value = data;
+});
 
 const formSchema = computed(() => {
   return [
@@ -15,19 +26,13 @@ const formSchema = computed(() => {
       value: true,
       fieldName: 'securityPhone',
       label: '密保手机',
-      description: '已绑定手机：138****8293',
-    },
-    {
-      value: true,
-      fieldName: 'securityQuestion',
-      label: '密保问题',
-      description: '未设置密保问题，密保问题可有效保护账户安全',
+      description: `已绑定手机：${userInfo.value?.mobile || '-'}`,
     },
     {
       value: true,
       fieldName: 'securityEmail',
       label: '备用邮箱',
-      description: '已绑定邮箱：ant***sign.com',
+      description: `已绑定邮箱：${userInfo.value?.email || '-'}`,
     },
     {
       value: false,

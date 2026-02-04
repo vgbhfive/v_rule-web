@@ -5,7 +5,7 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     meta: {
-      icon: 'ion:settings-outline',
+      icon: 'lucide:filter',
       keepAlive: true,
       order: 1005,
       title: $t('page.divide.title'),

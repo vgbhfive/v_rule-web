@@ -352,7 +352,7 @@ onUnmounted(() => {
                 >
                   <VbenRenderContent
                     :content="customContentRender[name]"
-                    v-bind="{ ...renderSlotProps, formContext: slotProps }"
+                    v-bind="{ ...renderSlotProps, $formContext: slotProps }"
                   />
                 </template>
                 <!-- <slot></slot> -->

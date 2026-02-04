@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { BasicOption } from '@vben/types';
-
 import type { VbenFormSchema } from '#/adapter/form';
 
 import { computed, onMounted, ref } from 'vue';
@@ -11,46 +9,25 @@ import { getUserInfoApi } from '#/api';
 
 const profileBaseSettingRef = ref();
 
-const MOCK_ROLES_OPTIONS: BasicOption[] = [
-  {
-    label: '管理员',
-    value: 'super',
-  },
-  {
-    label: '用户',
-    value: 'user',
-  },
-  {
-    label: '测试',
-    value: 'test',
-  },
-];
-
 const formSchema = computed((): VbenFormSchema[] => {
   return [
     {
-      fieldName: 'realName',
+      fieldName: 'name',
       component: 'Input',
       label: '姓名',
+      disabled: true,
     },
     {
-      fieldName: 'username',
+      fieldName: 'email',
       component: 'Input',
-      label: '用户名',
+      label: '邮箱',
+      disabled: true,
     },
     {
-      fieldName: 'roles',
-      component: 'Select',
-      componentProps: {
-        mode: 'tags',
-        options: MOCK_ROLES_OPTIONS,
-      },
-      label: '角色',
-    },
-    {
-      fieldName: 'introduction',
-      component: 'Textarea',
-      label: '个人简介',
+      fieldName: 'mobile',
+      component: 'Input',
+      label: '手机号',
+      disabled: true,
     },
   ];
 });

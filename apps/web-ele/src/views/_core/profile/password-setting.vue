@@ -5,9 +5,11 @@ import { computed, ref } from 'vue';
 
 import { ProfilePasswordSetting, z } from '@vben/common-ui';
 
-import { ElMessage } from 'element-plus';
+import { useAuthStore } from '#/store';
 
 const profilePasswordSettingRef = ref();
+
+const authStore = useAuthStore();
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
@@ -51,16 +53,12 @@ const formSchema = computed((): VbenFormSchema[] => {
     },
   ];
 });
-
-function handleSubmit() {
-  ElMessage.success('密码修改成功');
-}
 </script>
 <template>
   <ProfilePasswordSetting
     ref="profilePasswordSettingRef"
     class="w-1/3"
     :form-schema="formSchema"
-    @submit="handleSubmit"
+    @submit="authStore.changePassword"
   />
 </template>

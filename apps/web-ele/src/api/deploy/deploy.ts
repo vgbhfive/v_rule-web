@@ -29,7 +29,7 @@ export interface DeployParams {
   sceneNo: string;
 }
 
-export interface deployDiffInfo {
+export interface DeployDiffInfo {
   deployStatus: number;
   scene: diffDetail[];
   divide: diffDetail[];
@@ -51,7 +51,7 @@ export interface diffDetail {
     name: string;
     newValue: string;
     oldValue: string;
-  };
+  }[];
 }
 
 /**
@@ -96,7 +96,7 @@ export async function getNoDropdownList(params: Recordable<any>) {
  * @returns
  */
 export async function deployDiff(params: Recordable<any>) {
-  return requestClient.post<deployDiffInfo[]>(
+  return requestClient.post<DeployDiffInfo>(
     `/deploy/diff?no=${params.no}&type=${params.type}`,
   );
 }

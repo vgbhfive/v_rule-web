@@ -1,19 +1,31 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { CustomParams, CustomInfo } from '#/api/product';
+import type { CustomInfo, CustomParams, DetailList } from '#/api/product';
 
-import { h, onMounted, ref } from 'vue';
+import { h, onMounted, reactive, ref } from 'vue';
 
-import { Page, z } from '@vben/common-ui';
+import { Page } from '@vben/common-ui';
 
-import { ElButton, ElDrawer, ElMessage } from 'element-plus';
+import {
+  ElButton,
+  ElDrawer,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElMessage,
+  ElOption,
+  ElSelect,
+} from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDataSourceDropdownList } from '#/api/data';
 import { getValueTypes } from '#/api/enums';
 import {
+  createCustom,
+  customDetail,
   getCustomList,
+  updateCustom,
   updateProductValid,
 } from '#/api/product';
 import { getLineDropdownList } from '#/api/system';
@@ -238,347 +250,80 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditing = ref<CustomInfo | null>(null);
 const drawerTitle = ref('');
-const preValueType = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
+const isInfo = ref(false);
 const dataSourceOptions = ref<{ label: string; value: string }[]>([]);
+const ruleFormRef = ref();
 
-// 新增/编辑/详情表单配置
-const [EditForm, editFormApi] = useVbenForm({
-  collapsed: false,
-  commonConfig: {
-    componentProps: {
-      class: 'w-full',
-    },
-  },
-  handleValuesChange,
-  handleReset: handleResetEdit,
-  handleSubmit: handleSaveEdit,
-  layout: 'vertical',
-  schema: [
-    {
-      component: 'ApiSelect',
-      componentProps: {
-        options: lineOptions,
-        placeholder: '业务线名称',
-      },
-      fieldName: 'lineNo',
-      label: '业务线名称',
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入利率产品名称',
-      },
-      fieldName: 'productName',
-      label: '利率产品名称',
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入利率产品编码',
-        disabled: true,
-      },
-      fieldName: 'productNo',
-      label: '利率产品编码',
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        type: 'textarea',
-        placeholder: '请输入备注',
-        disabled: true,
-        rows: 3,
-      },
-      fieldName: 'remark',
-      label: '备注',
-      rules: z
-        .string()
-        .trim()
-        .min(0, '请输入备注')
-        .max(100, '备注最多100个字符'),
-    },
-    {
-      component: 'Select',
-      componentProps: {
-        allowClear: true,
-        filterOption: true,
-        options: [
-          {
-            label: '生效',
-            value: 1,
-          },
-          {
-            label: '失效',
-            value: 0,
-          },
-        ],
-        placeholder: '请选择状态',
-        showSearch: true,
-      },
-      fieldName: 'isValid',
-      label: '状态',
-      rules: 'required',
-    },
-  ],
-  showDefaultActions: true,
-  wrapperClass: 'grid-cols-1',
+const form = reactive({
+  lineNo: '',
+  productName: '',
+  productNo: '',
+  products: [] as DetailList[],
+  remark: '',
+  isValid: '',
 });
+
+const rules = {
+  // 其他字段校验...
+  products: {
+    keyName: [{ required: true, message: '请输入键名', trigger: 'blur' }],
+    valueType: [{ required: true, message: '请选择类型', trigger: 'change' }],
+    value: [
+      { required: true, message: '内容不能为空', trigger: ['blur', 'change'] },
+    ],
+  },
+};
 
 // 详情
 async function handleInfo(row: CustomInfo) {
   drawerTitle.value = '自定义产品详情';
-  currentEditing.value = row;
-  // 重置表单以清除之前的校验状态
-  editFormApi.resetForm();
-  // 填充表单数据
-  const values = {
-    ...row,
-    valueFixed: row.value,
-    valueDataSource: row.value,
-  };
-  if (values.valueType === 'dataSource') {
-    const data = {
-      lineNo: values.lineNo,
-    };
-    const dataSourceList = await getDataSourceDropdownList(data);
-    dataSourceOptions.value = dataSourceList.map((item) => ({
-      label: item.key,
-      value: item.value,
-    }));
-  } else {
-    dataSourceOptions.value = [];
-  }
-  editFormApi.setValues(values);
-  // 设置全部字段不可编辑
-  editFormApi.updateSchema([
-    {
-      fieldName: 'lineNo',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'productName',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'productNo',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'valueType',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'valueFixed',
-      componentProps: {
-        disabled: true,
-      },
-      hide: !(row.valueType === 'fixed'),
-    },
-    {
-      fieldName: 'valueDataSource',
-      componentProps: {
-        disabled: true,
-      },
-      hide: !(row.valueType === 'dataSource'),
-    },
-    {
-      fieldName: 'unit',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'remark',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'isValid',
-      componentProps: {
-        disabled: true,
-      },
-    },
-  ]);
-  // 设置操作按钮不可见
-  editFormApi.setState({ showDefaultActions: false });
+  const detail = await customDetail(row.id);
+  currentEditing.value = detail;
+  form.lineNo = detail.lineNo || '';
+  form.productName = detail.productName || '';
+  form.productNo = detail.productNo || '';
+  form.products = detail.productCustomEntityList || [];
+  form.remark = detail.remark || '';
+  form.isValid = detail.isValid;
+  handleLineChange();
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = true;
   editDrawerVisible.value = true;
 }
 
 // 新增
 function handleAdd() {
   drawerTitle.value = '新增自定义产品';
-  // 重置表单以清除之前的校验状态
-  editFormApi.resetForm();
-  // 设置部分字段可编辑
-  editFormApi.updateSchema([
-    {
-      fieldName: 'lineNo',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'productName',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'productNo',
-      componentProps: {
-        disabled: false,
-      },
-      hide: true,
-    },
-    {
-      fieldName: 'valueType',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'valueFixed',
-      componentProps: {
-        disabled: false,
-      },
-      hide: false,
-    },
-    {
-      fieldName: 'valueDataSource',
-      componentProps: {
-        disabled: false,
-      },
-      hide: true,
-    },
-    {
-      fieldName: 'unit',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'remark',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'isValid',
-      componentProps: {
-        disabled: false,
-      },
-    },
-  ]);
-  // 设置操作按钮可见
-  editFormApi.setState({ showDefaultActions: true });
   isAdd.value = true;
   isEdit.value = false;
+  isInfo.value = false;
+  form.lineNo = ' ';
+  form.productName = ' ';
+  form.productNo = ' ';
+  form.products = [] as DetailList[];
+  form.remark = ' ';
+  form.isValid = ' ';
   editDrawerVisible.value = true;
 }
 
 // 编辑
 async function handleEdit(row: CustomInfo) {
   drawerTitle.value = '编辑自定义产品';
-  currentEditing.value = row;
-  // 重置表单以清除之前的校验状态
-  editFormApi.resetForm();
-  // 填充表单数据
-  const values = {
-    ...row,
-    valueFixed: row.value,
-    valueDataSource: row.value,
-  };
-  if (values.valueType === 'dataSource') {
-    const data = {
-      lineNo: values.lineNo,
-    };
-    const dataSourceList = await getDataSourceDropdownList(data);
-    dataSourceOptions.value = dataSourceList.map((item) => ({
-      label: item.key,
-      value: item.value,
-    }));
-  } else {
-    dataSourceOptions.value = [];
-  }
-  editFormApi.setValues(values);
-  // 设置部分字段不可编辑
-  editFormApi.updateSchema([
-    {
-      fieldName: 'lineNo',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'productName',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'productNo',
-      componentProps: {
-        disabled: true,
-      },
-      hide: true,
-    },
-    {
-      fieldName: 'valueType',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'valueFixed',
-      componentProps: {
-        disabled: false,
-      },
-      hide: !(row.valueType === 'fixed'),
-    },
-    {
-      fieldName: 'valueDataSource',
-      componentProps: {
-        disabled: false,
-      },
-      hide: !(row.valueType === 'dataSource'),
-    },
-    {
-      fieldName: 'unit',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'remark',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'isValid',
-      componentProps: {
-        disabled: false,
-      },
-    },
-  ]);
-  // 设置操作按钮可见
-  editFormApi.setState({ showDefaultActions: true });
+  const detail = await customDetail(row.id);
+  currentEditing.value = detail;
+  form.lineNo = detail.lineNo || '';
+  form.productName = detail.productName || '';
+  form.productNo = detail.productNo || '';
+  form.products = detail.productCustomEntityList || [];
+  form.remark = detail.remark || '';
+  form.isValid = detail.isValid;
+  handleLineChange();
   isAdd.value = false;
   isEdit.value = true;
-  preValueType.value = row.valueType;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
@@ -610,108 +355,44 @@ async function handleInvalid(row: CustomInfo) {
   }
 }
 
-// 值变化
-async function handleValuesChange(values: any) {
-  if (
-    (isAdd.value || isEdit.value) &&
-    values.valueType &&
-    values.valueType !== preValueType.value
-  ) {
-    if (
-      values.valueType === 'fixed' &&
-      values.valueType !== preValueType.value
-    ) {
-      editFormApi.updateSchema([
-        {
-          fieldName: 'valueFixed',
-          componentProps: {
-            disabled: false,
-          },
-          hide: false,
-        },
-        {
-          fieldName: 'valueDataSource',
-          componentProps: {
-            disabled: false,
-          },
-          hide: true,
-        },
-      ]);
-      editFormApi.setFieldValue('valueFixed', '');
-    } else if (
-      values.valueType === 'dataSource' &&
-      values.valueType !== preValueType.value
-    ) {
-      editFormApi.updateSchema([
-        {
-          fieldName: 'valueFixed',
-          componentProps: {
-            disabled: false,
-          },
-          hide: true,
-        },
-        {
-          fieldName: 'valueDataSource',
-          componentProps: {
-            disabled: false,
-          },
-          hide: false,
-        },
-      ]);
-      editFormApi.setFieldValue('valueDataSource', '');
-      if (values.lineNo) {
-        const data = {
-          lineNo: values.lineNo,
-        };
-        const dataSourceList = await getDataSourceDropdownList(data);
-        dataSourceOptions.value = dataSourceList.map((item) => ({
-          label: item.key,
-          value: item.value,
-        }));
-      } else {
-        dataSourceOptions.value = [];
-      }
-    }
-    preValueType.value = values.valueType;
-  }
-}
-
 // 保存
-async function handleSaveEdit(values: any) {
+async function handleSaveEdit() {
   try {
     if (isAdd.value) {
-      const insertData = {
-        lineNo: values.lineNo,
-        productName: values.productName,
-        valueType: values.valueType,
-        value:
-          values.valueType === 'fixed'
-            ? values.valueFixed
-            : values.valueDataSource,
-        unit: values.unit,
-        remark: values.remark,
-        isValid: values.isValid,
-      };
-      console.log(insertData);
+      const valid = await ruleFormRef.value.validate();
+
+      if (valid) {
+        const insertData = {
+          lineNo: form.lineNo,
+          productName: form.productName,
+          type: 'custom',
+          productCustomEntityList: form.products,
+          remark: form.remark,
+          isValid: form.isValid,
+        };
+        const resp = await createCustom(insertData);
+        ElMessage.success(resp);
+      }
     }
 
     if (isEdit.value) {
-      const updateData = {
-        id: currentEditing.value?.id,
-        lineNo: values.lineNo,
-        productName: values.productName,
-        productNo: currentEditing.value?.productNo,
-        valueType: values.valueType,
-        value:
-          values.valueType === 'fixed'
-            ? values.valueFixed
-            : values.valueDataSource,
-        unit: values.unit,
-        remark: values.remark,
-        version: currentEditing.value?.version,
-        isValid: values.isValid,
-      };
-      console.log(updateData);
+      const valid = await ruleFormRef.value.validate();
+      if (valid) {
+        const updateData = {
+          id: currentEditing.value?.id,
+          lineNo: form.lineNo,
+          productName: form.productName,
+          productNo: currentEditing.value?.productNo,
+          productCustomEntityList: form.products,
+          type: 'custom',
+          version: currentEditing.value?.version,
+          remark: form.remark,
+          isValid: form.isValid,
+          createAt: currentEditing.value?.createAt,
+        };
+        const resp = await updateCustom(updateData);
+        ElMessage.success(resp);
+      }
     }
 
     // 关闭弹窗
@@ -719,9 +400,15 @@ async function handleSaveEdit(values: any) {
 
     // 刷新表格数据
     await gridApi.reload();
-
-    // 重置表单
-    await editFormApi.resetForm();
+    isAdd.value = false;
+    isEdit.value = false;
+    isInfo.value = false;
+    form.lineNo = ' ';
+    form.productName = ' ';
+    form.productNo = ' ';
+    form.products = [] as DetailList[];
+    form.remark = ' ';
+    form.isValid = ' ';
     currentEditing.value = null;
   } catch (error) {
     ElMessage.error('自定义产品操作失败');
@@ -732,31 +419,48 @@ async function handleSaveEdit(values: any) {
 // 重置
 async function handleResetEdit() {
   if (isAdd.value) {
-    editFormApi.resetForm();
+    form.lineNo = ' ';
+    form.productName = ' ';
+    form.productNo = ' ';
+    form.products = [] as DetailList[];
+    form.remark = ' ';
+    form.isValid = ' ';
   }
   if (isEdit.value) {
-    const data = {
-      ...currentEditing.value,
-      valueFixed: currentEditing.value?.value,
-      valueDataSource: currentEditing.value?.value,
-    };
-    editFormApi.setValues(data || {});
+    handleLineChange();
+    form.lineNo = currentEditing.value?.lineNo || '';
+    form.productName = currentEditing.value?.productName || '';
+    form.productNo = currentEditing.value?.productNo || '';
+    form.products = currentEditing.value?.productCustomEntityList || [];
+    form.remark = currentEditing.value?.remark || '';
+    form.isValid = currentEditing.value?.isValid || ' ';
   }
-}
-
-// 取消编辑
-function handleCancelEdit() {
-  editDrawerVisible.value = false;
-  currentEditing.value = null;
-  isAdd.value = false;
-  isEdit.value = false;
-  editFormApi.resetForm();
 }
 
 // 处理弹窗关闭
 function handleDrawerClose(done: () => void) {
-  handleCancelEdit();
+  editDrawerVisible.value = false;
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = false;
+  form.lineNo = ' ';
+  form.productName = ' ';
+  form.productNo = ' ';
+  form.products = [] as DetailList[];
+  form.remark = ' ';
+  form.isValid = ' ';
   done();
+}
+
+// 业务线编码出现变化
+async function handleLineChange() {
+  const dataSourceList = await getDataSourceDropdownList({
+    lineNo: form.lineNo,
+  });
+  dataSourceOptions.value = dataSourceList.map((item) => ({
+    label: item.key || '',
+    value: item.value || '',
+  }));
 }
 </script>
 
@@ -792,7 +496,176 @@ function handleDrawerClose(done: () => void) {
         </div>
       </template>
 
-      <EditForm @submit="handleSaveEdit" @reset="handleCancelEdit" />
+      <div class="mt-4">
+        <ElForm
+          ref="ruleFormRef"
+          :model="form"
+          label-width="100px"
+          label-position="top"
+          class="w-full"
+        >
+          <ElFormItem label="业务线名称" prop="lineNo" required>
+            <ElSelect
+              v-model="form.lineNo"
+              placeholder="业务线名称"
+              clearable
+              @change="handleLineChange"
+              :disabled="isInfo"
+            >
+              <ElOption
+                v-for="item in lineOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </ElSelect>
+          </ElFormItem>
+          <ElFormItem label="自定义产品名称" prop="productName" required>
+            <ElInput
+              v-model="form.productName"
+              placeholder="自定义产品名称"
+              :disabled="isInfo"
+            />
+          </ElFormItem>
+          <ElFormItem
+            v-if="!isAdd"
+            label="自定义产品编号"
+            prop="productNo"
+            required
+          >
+            <ElInput
+              v-model="form.productNo"
+              placeholder="自定义产品编号"
+              :disabled="isInfo || isEdit"
+            />
+          </ElFormItem>
+          <ElFormItem label="KV 列表" prop="products" required>
+            <div class="w-full">
+              <div class="mb-2">
+                <ElButton
+                  type="primary"
+                  size="small"
+                  @click="
+                    form.products.push({
+                      keyName: '',
+                      value: '',
+                      valueType: '',
+                    })
+                  "
+                  :disabled="isInfo"
+                >
+                  添加
+                </ElButton>
+              </div>
+
+              <div
+                v-for="(item, index) in form.products"
+                :key="index"
+                class="mb-2 flex items-start gap-2"
+              >
+                <div style="width: 200px">
+                  <ElFormItem
+                    :prop="`products.${index}.keyName`"
+                    :rules="rules.products.keyName"
+                  >
+                    <ElInput
+                      v-model="item.keyName"
+                      placeholder="Key"
+                      :disabled="isInfo"
+                    />
+                  </ElFormItem>
+                </div>
+
+                <div style="width: 150px">
+                  <ElFormItem
+                    :prop="`products.${index}.valueType`"
+                    :rules="rules.products.valueType"
+                  >
+                    <ElSelect
+                      v-model="item.valueType"
+                      @change="item.value = ''"
+                      :disabled="isInfo"
+                    >
+                      <ElOption
+                        v-for="type in allValueOptions"
+                        :key="type.value"
+                        :label="type.label"
+                        :value="type.value"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                </div>
+
+                <div style="width: 200px">
+                  <ElFormItem
+                    :prop="`products.${index}.value`"
+                    :rules="rules.products.value"
+                  >
+                    <ElInput
+                      v-if="item.valueType === 'fixed'"
+                      v-model="item.value"
+                      placeholder="固定值"
+                      :disabled="isInfo"
+                    />
+                    <ElSelect
+                      v-else-if="item.valueType === 'dataSource'"
+                      v-model="item.value"
+                      placeholder="数据源"
+                      :disabled="isInfo"
+                    >
+                      <ElOption
+                        v-for="option in dataSourceOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                      />
+                    </ElSelect>
+                    <ElInput v-else disabled placeholder="请先选择类型" />
+                  </ElFormItem>
+                </div>
+
+                <ElButton
+                  type="danger"
+                  size="small"
+                  @click="form.products.splice(index, 1)"
+                  :disabled="isInfo"
+                >
+                  X
+                </ElButton>
+              </div>
+            </div>
+          </ElFormItem>
+          <ElFormItem label="备注" prop="remark">
+            <ElInput
+              v-model="form.remark"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入备注"
+              :disabled="isInfo"
+            />
+          </ElFormItem>
+          <ElFormItem label="状态" prop="isValid" required>
+            <ElSelect
+              v-model="form.isValid"
+              placeholder="请选择状态"
+              class="w-full"
+              :disabled="isInfo"
+            >
+              <ElOption label="生效" :value="1" />
+              <ElOption label="失效" :value="0" />
+            </ElSelect>
+          </ElFormItem>
+        </ElForm>
+      </div>
+
+      <div class="flex justify-end" v-if="!isInfo">
+        <ElButton type="info" @click="handleResetEdit" size="default">
+          重置
+        </ElButton>
+        <ElButton type="primary" @click="handleSaveEdit" size="default">
+          提交
+        </ElButton>
+      </div>
     </ElDrawer>
   </Page>
 </template>
