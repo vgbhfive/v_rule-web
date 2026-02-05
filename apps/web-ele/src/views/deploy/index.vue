@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { TabsPaneContext } from 'element-plus';
 
-import type { DeployDoneInfo, DeployInfo } from '#/api/deploy';
+import type { DeployDiffInfo, DeployDoneInfo, DeployInfo } from '#/api/deploy';
 
-import { computed, h, onMounted, ref } from 'vue';
+import { h, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 
@@ -13,12 +13,15 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   deployDiff,
+  deployPass,
   getAlreadyDeployList,
   getDeployList,
   getNoDropdownList,
 } from '#/api/deploy';
 import { getSceneTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
+
+import DiffDialog from './DiffDialog.vue';
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -320,25 +323,82 @@ const [DataSourceTable, deployDoneTableApi] = useVbenVxeGrid({
   },
 });
 
-// 上线
+// 上线前展示DIFF
 async function handleDeploy(deployInfo: DeployInfo) {
-  ElMessage.success(`上线${JSON.stringify(deployInfo.no)}`);
+  try {
+    const res = await deployDiff({
+      type: deployInfo.type,
+      no: deployInfo.no,
+    });
+
+    // 2. 核心拦截：如果接口返回的是字符串而非对象
+    if (typeof res === 'string') {
+      // 依然把字符串传给组件，组件会通过 ElEmpty 展示它
+      diffData.value = res;
+      ElMessage.warning(`${res}`);
+    } else if (res?.deployStatus === 1) {
+      ElMessage.info('首次上线，无 DIFF 展示');
+      diffVisible.value = false;
+    } else {
+      currentDeployInfo.value = deployInfo;
+      isDiff.value = false;
+      diffVisible.value = true;
+      diffData.value = res;
+    }
+  } catch {
+    ElMessage.error('获取差异失败');
+    diffVisible.value = false;
+  } finally {
+    // 3. 无论如何关闭加载圈
+    loading.value = false;
+  }
+}
+
+// 上线
+async function handleDeploySubmit(text: string) {
+  const data = {
+    lineNo: currentDeployInfo.value?.lineNo,
+    deployType: currentDeployInfo.value?.type,
+    deployNo: currentDeployInfo.value?.no,
+    deployDesc: text,
+  };
+  console.log(data);
+  const resp = await deployPass(data);
+  ElMessage.success(resp);
 }
 
 // 查看DIFF
-async function handleDeployDiff(deployInfo: DeployInfo) {
-  ElMessage.success(`查看DIFF${JSON.stringify(deployInfo.no)}`);
-  const diffInfo = await deployDiff({
-    type: deployInfo.type,
-    no: deployInfo.no,
-  });
-  console.log(diffInfo);
-  if (diffInfo.deployStatus === 1) {
-    ElMessage.success('首次上线，无 DIFF 展示');
-  } else {
-    editDrawerVisible.value = true;
-    diffData.value = diffInfo;
-    currentDiffInfo.value = deployInfo;
+async function handleDeployDiff(deployInfo: any) {
+  // 1. 立即初始化弹窗状态
+  loading.value = true;
+  diffData.value = null;
+  isDiff.value = true;
+
+  try {
+    const res = await deployDiff({
+      type: deployInfo.type,
+      no: deployInfo.no,
+    });
+
+    // 2. 核心拦截：如果接口返回的是字符串而非对象
+    if (typeof res === 'string') {
+      // 依然把字符串传给组件，组件会通过 ElEmpty 展示它
+      diffData.value = res;
+      ElMessage.warning(`${res}`);
+    } else if (res?.deployStatus === 1) {
+      ElMessage.info('首次上线，无 DIFF 展示');
+      diffVisible.value = false;
+    } else {
+      isDiff.value = true;
+      diffVisible.value = true;
+      diffData.value = res;
+    }
+  } catch {
+    ElMessage.error('获取差异失败');
+    diffVisible.value = false;
+  } finally {
+    // 3. 无论如何关闭加载圈
+    loading.value = false;
   }
 }
 
@@ -367,56 +427,11 @@ async function loadDeployDoneData(params?: any) {
 }
 
 // DIFF 展示框标记
-const editDrawerVisible = ref(false);
-const diffData = ref<DeployDoneInfo | null>(null);
-const currentDiffInfo = ref<DeployInfo | null>(null);
-const diffCategoryMap = {
-  scene: '场景变更',
-  divide: '分流器变更',
-  product: '产品变更',
-  strategy: '策略集变更',
-  rule: '规则变更',
-  monitor: '监控变更',
-  deployStatus: '发布状态',
-};
-
-const filteredDiffs = computed(() => {
-  if (!diffData.value) {
-    // 即使没有 diffData，也要展示所有类别
-    const result: Record<string, any[]> = {};
-    for (const key of Object.keys(diffCategoryMap)) {
-      result[key] = [];
-    }
-    return result;
-  }
-  const data = diffData.value;
-  const result: Record<string, any[]> = {};
-
-  for (const key of Object.keys(diffCategoryMap)) {
-    const typedKey = key as keyof typeof data;
-    if (
-      Object.prototype.hasOwnProperty.call(data, typedKey) &&
-      Array.isArray(data[typedKey]) &&
-      data[typedKey].length > 0
-    ) {
-      const details = data[typedKey] as diffDetail[];
-      const flattenedDetails = details.flatMap((item) => {
-        if (item.results && item.results.length > 0) {
-          return item.results.map((resultItem) => ({
-            no: item.no,
-            name: item.name,
-            results: resultItem,
-          }));
-        }
-        return [];
-      });
-      result[typedKey] = flattenedDetails;
-    } else {
-      result[typedKey] = [];
-    }
-  }
-  return result;
-});
+const diffVisible = ref(false);
+const diffData = ref<DeployDiffInfo | null>(null);
+const currentDeployInfo = ref<DeployInfo | null>(null);
+const loading = ref(false);
+const isDiff = ref(false);
 </script>
 
 <template>
@@ -434,71 +449,12 @@ const filteredDiffs = computed(() => {
     </div>
 
     <!-- DIFF展示弹窗 -->
-    <ElDialog
-      v-model="editDrawerVisible"
-      title="变更详情"
-      width="70%"
-      :before-close="handleClose"
-      center
-    >
-      <div class="diff-content">
-        <details
-          v-for="(details, category) in filteredDiffs"
-          :key="category"
-          open
-          class="mb-4"
-        >
-          <summary class="cursor-pointer text-lg font-semibold">
-            {{ diffCategoryMap[category] }}
-          </summary>
-          <div class="p-4">
-            <ElTable
-              v-if="details.length > 0"
-              :data="details"
-              style="width: 100%"
-              border
-            >
-              <ElTableColumn label="编号" width="180">
-                <template #default="{ row }">
-                  {{ row.no }}
-                </template>
-              </ElTableColumn>
-              <ElTableColumn label="名称" width="180">
-                <template #default="{ row }">
-                  {{ row.name }}
-                </template>
-              </ElTableColumn>
-              <ElTableColumn label="变更项" width="180">
-                <template #default="{ row }">
-                  {{ row.results.name }}
-                </template>
-              </ElTableColumn>
-              <ElTableColumn label="旧值">
-                <template #default="{ row }">
-                  <pre
-                    class="whitespace-pre-wrap rounded bg-red-100 p-2 font-mono text-sm"
-                    >{{ row.results.oldValue }}</pre>
-                </template>
-              </ElTableColumn>
-              <ElTableColumn label="新值">
-                <template #default="{ row }">
-                  <pre
-                    class="whitespace-pre-wrap rounded bg-green-100 p-2 font-mono text-sm"
-                    >{{ row.results.newValue }}</pre>
-                </template>
-              </ElTableColumn>
-            </ElTable>
-            <div v-else>
-              <p>无变更</p>
-            </div>
-          </div>
-        </details>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <ElButton @click="editDrawerVisible = false">关闭</ElButton>
-        </span>
-      </template>
-    </ElDialog>
+    <DiffDialog
+      v-model="diffVisible"
+      :data="diffData"
+      :loading="loading"
+      :is-diff="isDiff"
+      @confirm="handleDeploySubmit"
+    />
   </Page>
 </template>

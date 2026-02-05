@@ -371,6 +371,7 @@ const [EditForm, editFormApi] = useVbenForm({
         options: limitProductOptions,
         placeholder: '请选择额度产品',
         disabled: true,
+        clearable: true,
       },
       fieldName: 'limitProductNo',
       label: '额度产品',
@@ -381,6 +382,7 @@ const [EditForm, editFormApi] = useVbenForm({
         options: periodProductOptions,
         placeholder: '请选择账期产品',
         disabled: true,
+        clearable: true,
       },
       fieldName: 'periodProductNo',
       label: '账期产品',
@@ -391,6 +393,7 @@ const [EditForm, editFormApi] = useVbenForm({
         options: interestProductOptions,
         placeholder: '请选择利率产品',
         disabled: true,
+        clearable: true,
       },
       fieldName: 'interestProductNo',
       label: '利率产品',
@@ -433,9 +436,9 @@ async function handleInfo(row: DivideInfo) {
   const detail = await getDivideDetail(row.id);
   const values = {
     ...detail,
-    limitProductNo: ' ',
-    periodProductNo: ' ',
-    interestProductNo: ' ',
+    limitProductNo: '',
+    periodProductNo: '',
+    interestProductNo: '',
   };
   if (detail.productEntityList) {
     detail.productEntityList.forEach((item) => {
@@ -627,9 +630,9 @@ async function handleEdit(row: DivideInfo) {
   const detail = await getDivideDetail(row.id);
   const values = {
     ...detail,
-    limitProductNo: ' ',
-    periodProductNo: ' ',
-    interestProductNo: ' ',
+    limitProductNo: '',
+    periodProductNo: '',
+    interestProductNo: '',
   };
   if (detail.productEntityList) {
     detail.productEntityList.forEach((item) => {

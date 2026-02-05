@@ -9,6 +9,7 @@ export interface StrategyInfo {
   strategyName: string;
   strategyNo: string;
   model: string;
+  ruleDetailEntityList: StrategyDetailInfo[];
   version: number;
   isValid: number;
   createAt: string;
@@ -20,6 +21,11 @@ export interface StrategyParams {
   strategyName?: string;
   strategyNo?: string;
   isValid?: number;
+}
+
+export interface StrategyDetailInfo {
+  detailNo: string;
+  ruleType: string;
 }
 
 /**

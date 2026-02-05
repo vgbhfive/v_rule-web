@@ -47,7 +47,7 @@
   "monitor": {
     "title": "监控管理",
     "sceneMonitor": "场景监控",
-    "fieldMonitor": "字段监控",
-    "reqIdMonitor": "ReqId用户请求"
+    "fieldMonitor": "数据源监控",
+    "reqIdMonitor": "用户请求可视化"
   }
 }

@@ -11,12 +11,13 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getStrategyModelTypes, getValueTypes } from '#/api/enums';
+import { getRuleDropdownList, getRuleSetDropdownList } from '#/api/rule';
 import {
-  createStrategy,
   getStrategyDetail,
   getStrategyList,
   updateStrategy,
   updateStrategyValid,
+  createStrategy
 } from '#/api/strategy';
 import { getLineDropdownList } from '#/api/system';
 
@@ -151,7 +152,6 @@ const gridOptions: VxeGridProps<StrategyInfo> = {
     },
     { field: 'strategyName', title: '名称' },
     { field: 'strategyNo', title: '编码' },
-    { field: 'sceneNo', title: '场景' },
     {
       field: 'model',
       title: '模式',
@@ -263,8 +263,10 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditing = ref<null | StrategyInfo>(null);
 const drawerTitle = ref('');
+const preLineNo = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
+const ruleOptions = ref<{ label: string; value: string }[]>([]);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -311,6 +313,28 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'Select',
       componentProps: {
+        options: modelOptions,
+        placeholder: '请选择模式',
+      },
+      fieldName: 'model',
+      label: '模式',
+      rules: 'required',
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        multiple: true,
+        options: ruleOptions,
+        placeholder: '请选择规则',
+        showSearch: true,
+      },
+      fieldName: 'ruleList',
+      label: '规则列表',
+      rules: 'required',
+    },
+    {
+      component: 'Select',
+      componentProps: {
         allowClear: true,
         filterOption: true,
         options: [
@@ -343,8 +367,16 @@ async function handleInfo(row: StrategyInfo) {
   editFormApi.resetForm();
   // 获取策略集详情
   const detail = await getStrategyDetail(row.id);
+  const ruleList = <any>[];
+  detail.ruleDetailEntityList.forEach((item) => {
+    ruleList.push(item.ruleType + '-' + item.detailNo);
+  });
+  const values = {
+    ...detail,
+    ruleList
+  }
   // 填充表单数据
-  editFormApi.setValues(detail);
+  editFormApi.setValues(values);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
     {
@@ -361,6 +393,18 @@ async function handleInfo(row: StrategyInfo) {
     },
     {
       fieldName: 'strategyNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'model',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'ruleList',
       componentProps: {
         disabled: true,
       },
@@ -404,6 +448,18 @@ function handleAdd() {
       hide: true,
     },
     {
+      fieldName: 'model',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'ruleList',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
       fieldName: 'isValid',
       componentProps: {
         disabled: false,
@@ -420,11 +476,21 @@ function handleAdd() {
 // 编辑
 async function handleEdit(row: StrategyInfo) {
   drawerTitle.value = '编辑策略集';
-  currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
+  // 获取策略集详情
+  const detail = await getStrategyDetail(row.id);
+  currentEditing.value = detail;
+  const ruleList = <any>[];
+  detail.ruleDetailEntityList.forEach((item) => {
+    ruleList.push(item.ruleType + '-' + item.detailNo);
+  });
+  const values = {
+    ...detail,
+    ruleList
+  }
   // 填充表单数据
-  editFormApi.setValues(row);
+  editFormApi.setValues(values);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
     {
@@ -443,6 +509,18 @@ async function handleEdit(row: StrategyInfo) {
       fieldName: 'strategyNo',
       componentProps: {
         disabled: true,
+      },
+    },
+    {
+      fieldName: 'model',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'ruleList',
+      componentProps: {
+        disabled: false,
       },
     },
     {
@@ -489,33 +567,75 @@ async function handleInvalid(row: StrategyInfo) {
 
 // 值变化
 async function handleValuesChange(values: any) {
-  console.log('value change:', values);
+  if (values.lineNo && values.lineNo !== preLineNo.value) {
+    const data = {
+      lineNo: values.lineNo,
+    };
+    const ruleList = await getRuleDropdownList(data);
+    const ruleSetList = await getRuleSetDropdownList(data);
+    const ruleOptionTmp = ruleList.map((item) => ({
+      label: `规则 - ${item.key}`,
+      value: `rule-${item.value}`,
+    }));
+    const ruleSetOptionTmp = ruleSetList.map((item) => ({
+      label: `规则集 - ${item.key}`,
+      value: `rule_set-${item.value}`,
+    }));
+    ruleOptions.value = [...ruleOptionTmp, ...ruleSetOptionTmp];
+
+    preLineNo.value = values.lineNo;
+  }
 }
 
 // 保存
 async function handleSaveEdit(values: any) {
   try {
     if (isAdd.value) {
+      const list = <any>[];
+      let index = 1;
+      values.ruleList.map(item => {
+        const items = item.split('-');
+        list.push({
+          ruleType: items[0],
+          detailNo: items[1],
+          priority: index,
+        })
+        index++;
+      });
       const insertData = {
         lineNo: values.lineNo,
         strategyName: values.strategyName,
+        model: values.model,
+        ruleDetailEntityList: list,
         isValid: values.isValid,
       };
-      console.log(insertData);
       const resp = await createStrategy(insertData);
       ElMessage.success(resp);
     }
 
     if (isEdit.value) {
+      const list = <any>[];
+      let index = 1;
+      values.ruleList.map(item => {
+        const items = item.split('-');
+        list.push({
+          ruleType: items[0],
+          detailNo: items[1],
+          priority: index,
+        })
+        index++;
+      });
       const updateData = {
         id: currentEditing.value?.id,
         lineNo: values.lineNo,
         strategyName: values.strategyName,
         strategyNo: currentEditing.value?.strategyNo,
+        model: values.model,
+        ruleDetailEntityList: list,
         version: currentEditing.value?.version,
         isValid: values.isValid,
+        createAt: currentEditing.value?.createAt,
       };
-      console.log(updateData);
       const resp = await updateStrategy(updateData);
       ElMessage.success(resp);
     }
@@ -528,6 +648,8 @@ async function handleSaveEdit(values: any) {
 
     // 重置表单
     await editFormApi.resetForm();
+    isAdd.value = false;
+    isEdit.value = false;
     currentEditing.value = null;
   } catch (error) {
     ElMessage.error('策略集操作失败');
@@ -541,10 +663,13 @@ async function handleResetEdit() {
     editFormApi.resetForm();
   }
   if (isEdit.value) {
+    const ruleList = <any>[];
+    currentEditing.value?.ruleDetailEntityList.forEach((item) => {
+      ruleList.push(item.ruleType + '-' + item.detailNo);
+    });
     const data = {
       ...currentEditing.value,
-      valueFixed: currentEditing.value?.value,
-      valueDataSource: currentEditing.value?.value,
+      ruleList,
     };
     editFormApi.setValues(data || {});
   }

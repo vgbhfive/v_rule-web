@@ -47,7 +47,7 @@
   "monitor": {
     "title": "Monitor Management",
     "sceneMonitor": "Scene Monitor",
-    "fieldMonitor": "Field Monitor",
-    "reqIdMonitor": "ReqId User Request"
+    "fieldMonitor": "Data Source Monitor",
+    "reqIdMonitor": "ReqId User Request Visualization"
   }
 }
