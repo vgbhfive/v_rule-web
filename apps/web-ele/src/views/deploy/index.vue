@@ -17,6 +17,7 @@ import {
   getAlreadyDeployList,
   getDeployList,
   getNoDropdownList,
+  getRollbackVersionList,
 } from '#/api/deploy';
 import { getSceneTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
@@ -362,9 +363,10 @@ async function handleDeploySubmit(text: string) {
     deployNo: currentDeployInfo.value?.no,
     deployDesc: text,
   };
-  console.log(data);
   const resp = await deployPass(data);
   ElMessage.success(resp);
+  diffVisible.value = false;
+  diffData.value = null;
 }
 
 // 查看DIFF
@@ -404,7 +406,16 @@ async function handleDeployDiff(deployInfo: any) {
 
 // 回滚
 async function handleDeployRollback(deployInfo: DeployInfo) {
-  ElMessage.success(`回滚${JSON.stringify(deployInfo.no)}`);
+  const data = {
+    deployNo: deployInfo.no,
+  };
+  const resp = await getRollbackVersionList(data);
+  if (resp?.length <= 0) {
+    ElMessage.warning('当前版本为首次上线，无法回滚');
+  } else {
+    ElMessage.success('回滚成功');
+    console.log(resp);
+  }
 }
 
 // tab 栏切换更新数据

@@ -107,8 +107,14 @@ export async function deployDiff(params: Recordable<any>) {
  * @returns
  */
 export async function deployPass(params: Recordable<any>) {
-  return requestClient.post<{ items: DeployDoneInfo[]; total: number }>(
-    '/deploy/pass',
-    params,
-  );
+  return requestClient.post('/deploy/pass', params);
+}
+
+/**
+ * 获取回滚版本列表
+ * @param params
+ * @returns
+ */
+export async function getRollbackVersionList(params: Recordable<any>) {
+  return requestClient.post<number[]>('/deploy/rollback/versions', params);
 }

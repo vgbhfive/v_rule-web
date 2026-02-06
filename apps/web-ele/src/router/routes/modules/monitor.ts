@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'lucide:activity',
       keepAlive: true,
-      order: 1007,
+      order: 1008,
       title: $t('page.monitor.title'),
     },
     name: 'MonitorManagement',

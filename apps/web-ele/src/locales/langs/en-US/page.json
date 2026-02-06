@@ -40,6 +40,10 @@
     "title": "Strategy Management",
     "strategy": "Strategy"
   },
+  "dag": {
+    "title": "DAG Show",
+    "dag": "DAG"
+  },
   "deploy": {
     "title": "Deploy Management",
     "deploy": "Deploy"

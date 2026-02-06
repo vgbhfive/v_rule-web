@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'lucide:rocket',
       keepAlive: true,
-      order: 1006,
+      order: 1007,
       title: $t('page.deploy.title'),
     },
     name: 'DeployManagement',

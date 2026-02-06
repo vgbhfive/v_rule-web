@@ -40,6 +40,10 @@
     "title": "策略集管理",
     "strategy": "策略集"
   },
+  "dag": {
+    "title": "DAG展示",
+    "dag": "DAG"
+  },
   "deploy": {
     "title": "发布管理",
     "deploy": "发布"
