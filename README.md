@@ -32,6 +32,7 @@
 | 用户流程标识     |         | &check; | &check; |
 | 场景指标监控     |         | &check; | &check; |
 | 场景分析报告     |         | &check; | &check; |
+| 数据源指标监控     |         | &check; | &check; |
 | 技术支持       |         | &check; | &check; |
 | 专属模型、特征开发  |         |  | &check; |
 | 专属策略支持  |         |  | &check; |
