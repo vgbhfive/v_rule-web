@@ -280,6 +280,7 @@ const strategyDropdownListOptions = ref<{ label: string; value: string }[]>([]);
 const limitProductOptions = ref<{ label: string; value: string }[]>([]);
 const periodProductOptions = ref<{ label: string; value: string }[]>([]);
 const interestProductOptions = ref<{ label: string; value: string }[]>([]);
+const customProductOptions = ref<{ label: string; value: string }[]>([]);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -399,6 +400,17 @@ const [EditForm, editFormApi] = useVbenForm({
       label: '利率产品',
     },
     {
+      component: 'ApiSelect',
+      componentProps: {
+        options: customProductOptions,
+        placeholder: '请选择自定义产品',
+        disabled: true,
+        clearable: true,
+      },
+      fieldName: 'customProductNo',
+      label: '自定义产品',
+    },
+    {
       component: 'Select',
       componentProps: {
         allowClear: true,
@@ -439,10 +451,15 @@ async function handleInfo(row: DivideInfo) {
     limitProductNo: '',
     periodProductNo: '',
     interestProductNo: '',
+    customProductNo: '',
   };
   if (detail.productEntityList) {
     detail.productEntityList.forEach((item) => {
       switch (item.type) {
+        case 'custom': {
+          values.customProductNo = item.productNo;
+          break;
+        }
         case 'interest': {
           values.interestProductNo = item.productNo;
           break;
@@ -518,6 +535,12 @@ async function handleInfo(row: DivideInfo) {
     },
     {
       fieldName: 'interestProductNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'customProductNo',
       componentProps: {
         disabled: true,
       },
@@ -606,6 +629,12 @@ function handleAdd() {
       },
     },
     {
+      fieldName: 'customProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
       fieldName: 'isValid',
       componentProps: {
         disabled: false,
@@ -633,10 +662,15 @@ async function handleEdit(row: DivideInfo) {
     limitProductNo: '',
     periodProductNo: '',
     interestProductNo: '',
+    customProductNo: '',
   };
   if (detail.productEntityList) {
     detail.productEntityList.forEach((item) => {
       switch (item.type) {
+        case 'custom': {
+          values.customProductNo = item.productNo;
+          break;
+        }
         case 'interest': {
           values.interestProductNo = item.productNo;
           break;
@@ -717,6 +751,12 @@ async function handleEdit(row: DivideInfo) {
       },
     },
     {
+      fieldName: 'customProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
       fieldName: 'isValid',
       componentProps: {
         disabled: false,
@@ -782,6 +822,12 @@ async function handleSaveEdit(values: any) {
           type: 'interest',
         });
       }
+      if (values.customProductNo) {
+        productEntityList.push({
+          productNo: values.customProductNo,
+          type: 'custom',
+        });
+      }
       const insertData = {
         lineNo: values.lineNo,
         sceneNo: values.sceneNo,
@@ -814,6 +860,12 @@ async function handleSaveEdit(values: any) {
         productEntityList.push({
           productNo: values.interestProductNo,
           type: 'interest',
+        });
+      }
+      if (values.customProductNo) {
+        productEntityList.push({
+          productNo: values.customProductNo,
+          type: 'custom',
         });
       }
       const updateData = {
@@ -905,6 +957,17 @@ async function handleValuesChange(values: any) {
         value: item.value,
       }));
 
+      // 自定义
+      const customData = {
+        lineNo: values.lineNo,
+        type: 'custom',
+      };
+      const customDropdownList = await getProductDropdownList(customData);
+      customProductOptions.value = customDropdownList.map((item) => ({
+        label: item.key,
+        value: item.value,
+      }));
+
       preLineNo.value = values.lineNo;
     } else if (
       values.riskStrategyNo &&
@@ -963,6 +1026,17 @@ async function handleValuesChange(values: any) {
     };
     const interestDropdownList = await getProductDropdownList(interestData);
     interestProductOptions.value = interestDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    // 自定义
+    const customData = {
+      lineNo: currentEditing.value?.lineNo,
+      type: 'custom',
+    };
+    const customDropdownList = await getProductDropdownList(customData);
+    customProductOptions.value = customDropdownList.map((item) => ({
       label: item.key,
       value: item.value,
     }));
