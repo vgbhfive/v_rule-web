@@ -28,12 +28,22 @@ export async function getCategoryTypes() {
 }
 
 /**
- * 获取条件类型下拉列表
+ * 获取规则条件类型下拉列表
  * @returns
  */
 export async function getConditionTypes() {
   return requestClient.get<{ name: string; value: string }[]>(
     '/enum/conditionType',
+  );
+}
+
+/**
+ * 获取规则集条件类型下拉列表
+ * @returns
+ */
+export async function getRuleSetConditionTypes() {
+  return requestClient.get<{ name: string; value: string }[]>(
+    '/enum/conditionType/ruleSet',
   );
 }
 

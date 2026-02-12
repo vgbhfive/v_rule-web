@@ -63,10 +63,6 @@ onMounted(async () => {
     newAllDataCategoryMap[item.value] = item.key;
   }
   allDataCategoryMap.value = newAllDataCategoryMap;
-  allDataCategoryOptions.value = dataCategoryList.map((item) => ({
-    label: item.key,
-    value: item.value,
-  }));
 });
 
 // 查询表单配置
@@ -308,6 +304,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
 const currentEditing = ref<DataSourceInfo | null>(null);
+const preLineNo = ref('');
 const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
@@ -321,6 +318,7 @@ const [EditForm, editFormApi] = useVbenForm({
     },
   },
   handleReset: handleResetEdit,
+  handleValuesChange: handleValuesChangeEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
   schema: [
@@ -548,7 +546,7 @@ function handleAdd() {
 }
 
 // 编辑场景
-function handleEdit(row: DataSourceInfo) {
+async function handleEdit(row: DataSourceInfo) {
   drawerTitle.value = '编辑数据源';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
@@ -701,6 +699,25 @@ function handleResetEdit() {
   }
   if (isEdit.value) {
     editFormApi.setValues(currentEditing.value || {});
+  }
+}
+
+// 值变化
+async function handleValuesChangeEdit(values: any) {
+  if (values.lineNo && values.lineNo !== preLineNo.value) {
+    const dataCategoryList = await getDataCategoryDropdownList({
+      lineNo: values.lineNo,
+    });
+    allDataCategoryOptions.value = dataCategoryList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    if (isAdd.value) {
+      values.dataCategoryNo = '';
+      editFormApi.setValues(values);
+    }
+    preLineNo.value = values.lineNo;
   }
 }
 

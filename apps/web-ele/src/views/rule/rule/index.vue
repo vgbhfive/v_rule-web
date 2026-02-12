@@ -635,8 +635,7 @@ function handleAddSource() {
 
 // 编辑
 function handleEdit(row: RuleInfo) {
-  drawerTitle.value = '编辑场景';
-  ElMessage.info(`编辑场景: ${row.id}`);
+  drawerTitle.value = `编辑${row.thresholdType === 'fixed' ? '值规则' : '源规则'}`;
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
@@ -757,7 +756,6 @@ async function handleInvalid(row: RuleInfo) {
 // 值变化
 async function handleValueChange(values: any) {
   if (values.lineNo && values.lineNo !== preLineNo.value) {
-    preLineNo.value = values.lineNo;
     const queryParams = { lineNo: values.lineNo };
 
     const insertDataSourceList = await getDataSourceDropdownList(queryParams);
@@ -765,6 +763,12 @@ async function handleValueChange(values: any) {
       label: item.key,
       value: item.value,
     }));
+
+    if (isAddDataSource.value) {
+      values.dataSourceNo = '';
+      editFormApi.setValues(values);
+    }
+    preLineNo.value = values.lineNo;
   }
 }
 

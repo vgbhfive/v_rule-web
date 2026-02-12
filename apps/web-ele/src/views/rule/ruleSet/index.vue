@@ -12,8 +12,8 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   getCombineTypes,
-  getConditionTypes,
   getResultTypes,
+  getRuleSetConditionTypes,
   getRuleTypes,
 } from '#/api/enums';
 import { getRuleDropdownList } from '#/api/rule';
@@ -62,7 +62,7 @@ onMounted(async () => {
   }));
 
   // 条件
-  const conditionList = await getConditionTypes();
+  const conditionList = await getRuleSetConditionTypes();
   conditionTypeOptions.value = conditionList.map((item) => ({
     label: item.name,
     value: item.value,
@@ -747,6 +747,11 @@ async function handleValuesChange(values: any) {
         value: item.value,
       }));
 
+      values.firstNo = '';
+      values.firstType = '';
+      values.secondNo = '';
+      values.secondType = '';
+      editFormApi.setValues(values);
       preLineNo.value = values.lineNo;
     } else if (values.firstType && values.firstType !== preFirstType.value) {
       preFirstType.value = values.firstType;
@@ -756,7 +761,8 @@ async function handleValuesChange(values: any) {
         firstNoOptions.value = insertRuleSetOptions.value;
       }
       secondNoOptions.value = [];
-      editFormApi.setFieldValue('firstNo', '');
+      values.firstNo = '';
+      editFormApi.setValues(values);
 
       preFirstType.value = values.firstType;
     } else if (values.secondType && values.secondType !== preSecondType.value) {
@@ -767,7 +773,8 @@ async function handleValuesChange(values: any) {
         secondNoOptions.value = insertRuleSetOptions.value;
       }
       firstNoOptions.value = [];
-      editFormApi.setFieldValue('secondNo', '');
+      values.secondNo = '';
+      editFormApi.setValues(values);
 
       preSecondType.value = values.secondType;
     }
