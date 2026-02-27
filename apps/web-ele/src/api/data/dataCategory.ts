@@ -16,6 +16,7 @@ export interface DataCategoryInfo {
   isValid: number;
   version: number;
   createAt: string;
+  detailList: DataCategoryDetail[];
 }
 
 export interface DataCategoryParams {
@@ -23,6 +24,14 @@ export interface DataCategoryParams {
   dataCategoryName?: string;
   dataCategoryNo?: string;
   isValid?: number;
+}
+
+export interface DataCategoryDetail {
+  dataCategoryNo?: string;
+  key: string;
+  valueType: string;
+  value: string;
+  trialValue?: string;
 }
 
 /**
@@ -58,10 +67,28 @@ export async function updateDataCategoryValid(params: Recordable<any>) {
 }
 
 /**
+ * 数据源分类详情
+ * @param id
+ * @returns
+ */
+export async function getDataCategoryDetail(id: number) {
+  return requestClient.post<DataCategoryInfo>(`/dataCategory/detail/${id}`);
+}
+
+/**
  * 获取数据源分类下拉列表
  * @param param
  * @returns
  */
 export async function getDataCategoryDropdownList(param: Recordable<any>) {
   return requestClient.post<Dropdown[]>('/dataCategory/dropdown/list', param);
+}
+
+/**
+ * 试算接口
+ * @param param
+ * @returns
+ */
+export async function dataCategoryTrial(param: Recordable<any>) {
+  return requestClient.post('/dataCategory/trial', param);
 }

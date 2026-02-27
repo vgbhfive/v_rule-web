@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { DataCategoryInfo, DataCategoryParams } from '#/api/data';
+import type {
+  DataCategoryDetail,
+  DataCategoryInfo,
+  DataCategoryParams,
+} from '#/api/data';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -12,12 +16,18 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createDataCategory,
+  dataCategoryTrial,
+  getDataCategoryDetail,
   getDataCategoryList,
+  getDataSourceDropdownList,
   updateDataCategory,
   updateDataCategoryValid,
 } from '#/api/data';
 import { getCategoryTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
+
+import HttpDialog from './HttpDialog.vue';
+import PythonDialog from './PythonDialog.vue';
 
 const lineMap = ref<Record<string, string>>({});
 const allCategoryMap = ref<Record<string, string>>({});
@@ -249,8 +259,12 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditing = ref<DataCategoryInfo | null>(null);
 const drawerTitle = ref('');
+const preLineNo = ref('');
+const preCategoryType = ref('');
+const allDataSourceOptions = ref<{ label: string; value: string }[]>([]);
 const isAdd = ref(false);
 const isEdit = ref(false);
+const isInfo = ref(false);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -260,6 +274,7 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
+  handleValuesChange: handleValueChange,
   handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
@@ -351,6 +366,7 @@ const [EditForm, editFormApi] = useVbenForm({
         options: allCategoryOptions,
         placeholder: '请输入所属类型',
         disabled: true,
+        clearable: true,
       },
       fieldName: 'categoryType',
       label: '所属类型',
@@ -362,12 +378,17 @@ const [EditForm, editFormApi] = useVbenForm({
 });
 
 // 详情
-function handleInfo(row: DataCategoryInfo) {
+async function handleInfo(row: DataCategoryInfo) {
   drawerTitle.value = '数据源分类详情';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
+  if (row.categoryType === 1 || row.categoryType === 2) {
+    // Python数据源分类/HTTP数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detailData.value = detail.detailList;
+  }
   editFormApi.setValues(row);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
@@ -423,6 +444,9 @@ function handleInfo(row: DataCategoryInfo) {
   ]);
   // 设置操作按钮不可见
   editFormApi.setState({ showDefaultActions: false });
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = true;
   editDrawerVisible.value = true;
 }
 
@@ -487,16 +511,22 @@ function handleAdd() {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = true;
   isEdit.value = false;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
 // 编辑
-function handleEdit(row: DataCategoryInfo) {
+async function handleEdit(row: DataCategoryInfo) {
   drawerTitle.value = '编辑数据源分类';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
+  if (row.categoryType === 1) {
+    // Python数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detailData.value = detail.detailList;
+  }
   editFormApi.setValues(row);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
@@ -554,6 +584,7 @@ function handleEdit(row: DataCategoryInfo) {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = false;
   isEdit.value = true;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
@@ -598,6 +629,7 @@ async function handleSaveEdit(values: any) {
         priority: values.priority,
         categoryType: values.categoryType,
         isValid: values.isValid,
+        detailList: detailData.value,
       };
 
       const resp = await createDataCategory(insertData);
@@ -617,6 +649,7 @@ async function handleSaveEdit(values: any) {
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
+        detailList: detailData.value,
       };
 
       const resp = await updateDataCategory(updateData);
@@ -633,10 +666,42 @@ async function handleSaveEdit(values: any) {
     // 重置表单
     await editFormApi.resetForm();
     currentEditing.value = null;
+    detailData.value = [];
   } catch (error) {
     ElMessage.error('数据源分类操作失败');
     console.error('数据源分类操作失败:', error);
   }
+}
+
+// 值改变
+async function handleValueChange(values: any) {
+  if (
+    values.categoryType &&
+    values.categoryType === 1 &&
+    values.categoryType !== preCategoryType.value
+  ) {
+    // Python
+    pythonVisible.value = true;
+  }
+  if (
+    values.categoryType &&
+    values.categoryType === 2 &&
+    values.categoryType !== preCategoryType.value
+  ) {
+    // HTTP
+    httpVisible.value = true;
+  }
+  if (values.lineNo && preLineNo.value !== values.lineNo) {
+    // 数据源
+    const queryParams = { lineNo: values.lineNo };
+    const insertDataSourceList = await getDataSourceDropdownList(queryParams);
+    allDataSourceOptions.value = insertDataSourceList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+    preLineNo.value = values.lineNo;
+  }
+  preCategoryType.value = values.categoryType;
 }
 
 // 重置
@@ -653,6 +718,12 @@ function handleResetEdit() {
 function handleCancelEdit() {
   editDrawerVisible.value = false;
   currentEditing.value = null;
+  preLineNo.value = '';
+  preCategoryType.value = '';
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = false;
+  detailData.value = [];
   editFormApi.resetForm();
 }
 
@@ -660,6 +731,49 @@ function handleCancelEdit() {
 function handleDrawerClose(done: () => void) {
   handleCancelEdit();
   done();
+}
+
+const pythonVisible = ref(false);
+const httpVisible = ref(false);
+const detailData = ref<DataCategoryDetail[]>([]);
+
+// Python数据源分类提交
+async function handlePythonConfirm() {
+  pythonVisible.value = false;
+}
+
+// 数据源分类试算
+async function handleTrial() {
+  const editData = await editFormApi.getValues();
+  if (!editData?.sourceFrom || !editData?.lineNo) {
+    ElMessage.warning('请完善数据源分类信息后再次试算！');
+    return;
+  }
+  if (editData?.categoryType === 1 && editData?.sourceFrom !== 'python') {
+    ElMessage.warning('Python数据源分类的一级来源必须为【python】');
+  }
+  if (editData?.categoryType === 2 && editData?.sourceFrom !== 'http') {
+    ElMessage.warning('HTTP数据源分类的一级来源必须为【http】');
+  }
+  const data = {
+    detailList: detailData.value,
+    lineNo: editData.lineNo,
+    sourceFrom: editData.sourceFrom,
+  };
+  const resp = await dataCategoryTrial(data);
+  ElMessage.success(resp);
+
+  // 隐藏code 代码
+  detailData.value.forEach((item) => {
+    if (item.key === 'code') {
+      detailData.value.splice(detailData.value.indexOf(item), 1);
+    }
+  });
+}
+
+// HTTP数据源分类提交
+async function handleHttpConfirm() {
+  httpVisible.value = false;
 }
 </script>
 
@@ -697,5 +811,27 @@ function handleDrawerClose(done: () => void) {
 
       <EditForm @submit="handleSaveEdit" @reset="handleCancelEdit" />
     </ElDrawer>
+
+    <!-- Python数据源分类 -->
+    <PythonDialog
+      v-model="pythonVisible"
+      :data="detailData"
+      :data-source-list="allDataSourceOptions"
+      :can-edit="isInfo"
+      @update:data="detailData = $event"
+      @confirm="handlePythonConfirm"
+      @trial="handleTrial"
+    />
+
+    <!-- HTTP数据源分类 -->
+    <HttpDialog
+      v-model="httpVisible"
+      :data="detailData"
+      :data-source-list="allDataSourceOptions"
+      :can-edit="isInfo"
+      @update:data="detailData = $event"
+      @confirm="handleHttpConfirm"
+      @trial="handleTrial"
+    />
   </Page>
 </template>

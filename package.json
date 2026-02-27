@@ -55,6 +55,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
+    "@guolao/vue-monaco-editor": "^1.6.0",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "@vben/eslint-config": "workspace:*",
