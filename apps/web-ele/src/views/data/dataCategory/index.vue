@@ -384,10 +384,32 @@ async function handleInfo(row: DataCategoryInfo) {
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
-  if (row.categoryType === 1 || row.categoryType === 2) {
-    // Python数据源分类/HTTP数据源分类
+  if (row.categoryType === 1) {
+    // Python数据源分类
     const detail = await getDataCategoryDetail(row.id);
-    detailData.value = detail.detailList;
+    detail.detailList.forEach((item) => {
+      if (item.key === 'code') {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
+  }
+  if (row.categoryType === 2) {
+    // HTTP数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detail.detailList.forEach((item) => {
+      if (
+        item.key === 'requestUrl' ||
+        item.key === 'requestType' ||
+        item.key === 'requestStatusField' ||
+        item.key === 'requestStatusCode'
+      ) {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
   }
   editFormApi.setValues(row);
   // 设置全部字段不可编辑
@@ -525,7 +547,29 @@ async function handleEdit(row: DataCategoryInfo) {
   if (row.categoryType === 1) {
     // Python数据源分类
     const detail = await getDataCategoryDetail(row.id);
-    detailData.value = detail.detailList;
+    detail.detailList.forEach((item) => {
+      if (item.key === 'code') {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
+  }
+  if (row.categoryType === 2) {
+    // HTTP数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detail.detailList.forEach((item) => {
+      if (
+        item.key === 'requestUrl' ||
+        item.key === 'requestType' ||
+        item.key === 'requestStatusField' ||
+        item.key === 'requestStatusCode'
+      ) {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
   }
   editFormApi.setValues(row);
   // 设置部分字段不可编辑
@@ -629,7 +673,7 @@ async function handleSaveEdit(values: any) {
         priority: values.priority,
         categoryType: values.categoryType,
         isValid: values.isValid,
-        detailList: detailData.value,
+        detailList: [...detailData.value, ...detailOtherData.value],
       };
 
       const resp = await createDataCategory(insertData);
@@ -649,7 +693,7 @@ async function handleSaveEdit(values: any) {
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
-        detailList: detailData.value,
+        detailList: [...detailData.value, ...detailOtherData.value],
       };
 
       const resp = await updateDataCategory(updateData);
@@ -724,6 +768,7 @@ function handleCancelEdit() {
   isEdit.value = false;
   isInfo.value = false;
   detailData.value = [];
+  detailOtherData.value = [];
   editFormApi.resetForm();
 }
 
@@ -736,6 +781,7 @@ function handleDrawerClose(done: () => void) {
 const pythonVisible = ref(false);
 const httpVisible = ref(false);
 const detailData = ref<DataCategoryDetail[]>([]);
+const detailOtherData = ref<DataCategoryDetail[]>([]);
 
 // Python数据源分类提交
 async function handlePythonConfirm() {
@@ -756,19 +802,12 @@ async function handleTrial() {
     ElMessage.warning('HTTP数据源分类的一级来源必须为【http】');
   }
   const data = {
-    detailList: detailData.value,
+    detailList: [...detailData.value, ...detailOtherData.value],
     lineNo: editData.lineNo,
     sourceFrom: editData.sourceFrom,
   };
   const resp = await dataCategoryTrial(data);
   ElMessage.success(resp);
-
-  // 隐藏code 代码
-  detailData.value.forEach((item) => {
-    if (item.key === 'code') {
-      detailData.value.splice(detailData.value.indexOf(item), 1);
-    }
-  });
 }
 
 // HTTP数据源分类提交
@@ -816,9 +855,11 @@ async function handleHttpConfirm() {
     <PythonDialog
       v-model="pythonVisible"
       :data="detailData"
+      :other-data="detailOtherData"
       :data-source-list="allDataSourceOptions"
       :can-edit="isInfo"
       @update:data="detailData = $event"
+      @update:other-data="detailOtherData = $event"
       @confirm="handlePythonConfirm"
       @trial="handleTrial"
     />
@@ -827,9 +868,11 @@ async function handleHttpConfirm() {
     <HttpDialog
       v-model="httpVisible"
       :data="detailData"
+      :other-data="detailOtherData"
       :data-source-list="allDataSourceOptions"
       :can-edit="isInfo"
       @update:data="detailData = $event"
+      @update:other-data="detailOtherData = $event"
       @confirm="handleHttpConfirm"
       @trial="handleTrial"
     />

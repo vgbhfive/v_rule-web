@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataCategoryDetail } from '#/api/data';
 
-import { computed, onMounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import {
   ElButton,
@@ -20,11 +20,13 @@ const props = defineProps<{
   data: DataCategoryDetail[];
   dataSourceList: { label: string; value: string }[];
   modelValue: boolean;
+  otherData: DataCategoryDetail[];
 }>();
 
 const emit = defineEmits([
   'update:modelValue',
   'update:data',
+  'update:other-data',
   'confirm',
   'trial',
 ]);
@@ -37,28 +39,10 @@ const visible = computed({
 const comment = ref('');
 const isTrial = ref(false);
 const allValueOptions = ref<{ label: string; value: string }[]>([]);
-
-// 1. 定义代码内容（支持双向绑定）
-const defaultCode = `    # Python 示例代码
-    tmp = res['a']
-    res['b'] = 1`;
-const pythonCode = ref(defaultCode);
-
-// 2. 编辑器配置项
-const editorOptions = ref({
-  automaticLayout: true, // 自动适应父容器大小
-  minimap: { enabled: false }, // 关闭右侧代码小地图（如果代码量不大建议关闭，看起来更清爽）
-  fontSize: 14, // 字体大小
-  tabSize: 4, // Python 推荐 4 个空格缩进
-  insertSpaces: true, // 按 Tab 键插入空格
-  wordWrap: 'on', // 自动换行
-  lineNumbers: 'on', // 显示行号
-  scrollBeyondLastLine: false, // 取消滚动超过最后一行
-  readOnly: props.canEdit,
-});
-
-// 3. 保存编辑器实例的引用 (推荐使用 shallowRef 避免 Vue 深度代理带来的性能问题)
-const editorRef = shallowRef(null);
+const requestUrl = ref('');
+const requestType = ref('');
+const requestStatusField = ref('');
+const requestStatusCode = ref('');
 
 onMounted(async () => {
   // 阈值类型
@@ -69,39 +53,29 @@ onMounted(async () => {
   }));
 });
 
-// 4. 编辑器加载完成后的回调
-const handleEditorMount = (editor: any) => {
-  editorRef.value = editor;
-  editor.focus();
-
-  props.data.forEach((item) => {
-    if (item.key === 'code') {
-      emit(
-        'update:data',
-        props.data.filter((_, i) => i !== props.data.indexOf(item)),
-      );
-      pythonCode.value = item.value;
+const handleMount = () => {
+  console.log('done', props.data, props.otherData);
+  props.otherData.forEach((item) => {
+    switch (item.key) {
+      case 'requestStatusCode': {
+        requestStatusCode.value = item.value;
+        break;
+      }
+      case 'requestStatusField': {
+        requestStatusField.value = item.value;
+        break;
+      }
+      case 'requestType': {
+        requestType.value = item.value;
+        break;
+      }
+      case 'requestUrl': {
+        requestUrl.value = item.value;
+        break;
+      }
+      // No default
     }
   });
-};
-
-// 5. 获取代码供外部或提交使用
-const getEditorCode = () => {
-  const currentCode = pythonCode.value;
-  const newItem: DataCategoryDetail = {
-    key: 'code',
-    valueType: 'fixed',
-    value: currentCode,
-    trialValue: currentCode,
-  };
-
-  // 将新数组传回父组件（克隆一份旧数组并加上新项）
-  emit('update:data', [...props.data, newItem]);
-};
-
-// 编辑器内容改变时触发
-const handleEditorCodeChange = () => {
-  isTrial.value = false;
 };
 
 // 关闭
@@ -109,18 +83,41 @@ const handleClosed = () => {
   isTrial.value = false;
   visible.value = false;
   comment.value = '';
-  pythonCode.value = defaultCode;
+};
+
+const generateHttpInfo = () => {
+  const url: DataCategoryDetail = {
+    key: 'requestUrl',
+    valueType: 'fixed',
+    value: requestUrl.value,
+    trialValue: requestUrl.value,
+  };
+  const type: DataCategoryDetail = {
+    key: 'requestType',
+    valueType: 'fixed',
+    value: requestType.value,
+    trialValue: requestType.value,
+  };
+  const field: DataCategoryDetail = {
+    key: 'requestStatusField',
+    valueType: 'fixed',
+    value: requestStatusField.value,
+    trialValue: requestStatusField.value,
+  };
+  const code: DataCategoryDetail = {
+    key: 'requestStatusCode',
+    valueType: 'fixed',
+    value: requestStatusCode.value,
+    trialValue: requestStatusCode.value,
+  };
+  emit('update:other-data', [url, type, field, code]);
 };
 
 // 试算
 const handleTrial = () => {
-  for (let index = 0; index < props.data.length; index++) {
-    const element = props.data[index];
-    if (element?.key === 'code') {
-      removeDataSource(index);
-    }
-  }
-  getEditorCode();
+  // 清空其他数据
+  emit('update:other-data', []);
+  generateHttpInfo();
   emit('trial', comment.value);
   isTrial.value = true;
 };
@@ -131,7 +128,7 @@ const handleConfirm = () => {
     ElMessage.warning('请先完成试算后再提交');
     return;
   }
-  getEditorCode();
+  generateHttpInfo();
   emit('confirm', comment.value);
   isTrial.value = false;
 };
@@ -163,10 +160,36 @@ const removeDataSource = (index: number) => {
     width="80%"
     append-to-body
     @closed="handleClosed"
+    @vue:mounted="handleMount"
   >
-    <div class="data-source-container" style="margin-top: 20px">
+    <div class="data-source-container rounded-lg bg-white p-4">
+      <div class="data-row mb-3 flex items-center gap-3">
+        <span class="font-medium" style="font-size: 16px">URL</span>
+      </div>
+      <div style="width: 500px; margin-bottom: 20px">
+        <ElInput
+          v-model="requestUrl"
+          placeholder="请输入接口地址"
+          :disabled="props.canEdit"
+        />
+      </div>
+
+      <div class="data-row mb-3 flex items-center gap-3">
+        <span class="font-medium" style="font-size: 16px">请求方式</span>
+      </div>
+      <div class="column-type" style="width: 220px; margin-bottom: 20px">
+        <ElSelect
+          v-model="requestType"
+          placeholder="选择类型"
+          :disabled="props.canEdit"
+        >
+          <ElOption label="GET" value="GET" />
+          <ElOption label="POST" value="POST" />
+        </ElSelect>
+      </div>
+
       <div class="items-left text-medium mb-3 flex">
-        <span style="font-size: 16px">请求参数</span>
+        <span class="font-medium" style="font-size: 16px">请求参数</span>
       </div>
 
       <div
@@ -174,7 +197,7 @@ const removeDataSource = (index: number) => {
         :key="index"
         class="data-row mb-3 flex items-center gap-3"
       >
-        <div class="column-key">
+        <div class="column-key" style="width: 180px">
           <ElFormItem :prop="`data.${index}.key`" class="no-margin">
             <ElInput
               v-model="item.key"
@@ -184,25 +207,21 @@ const removeDataSource = (index: number) => {
           </ElFormItem>
         </div>
 
-        <div class="column-type">
+        <div class="column-type" style="width: 150px">
           <ElFormItem :prop="`data.${index}.valueType`" class="no-margin">
             <ElSelect
               v-model="item.valueType"
               @change="item.value = ''"
-              placeholder="选择类型"
+              placeholder="参数类型"
               :disabled="props.canEdit"
             >
-              <ElOption
-                v-for="type in allValueOptions"
-                :key="type.value"
-                :label="type.label"
-                :value="type.value"
-              />
+              <ElOption label="固定值" value="fixed" />
+              <ElOption label="数据源" value="dataSource" />
             </ElSelect>
           </ElFormItem>
         </div>
 
-        <div class="column-value">
+        <div class="column-value" style="width: 180px">
           <ElFormItem :prop="`data.${index}.value`" class="no-margin">
             <ElInput
               v-if="item.valueType === 'fixed'"
@@ -213,7 +232,7 @@ const removeDataSource = (index: number) => {
             <ElSelect
               v-else-if="item.valueType === 'dataSource'"
               v-model="item.value"
-              placeholder="数据源"
+              placeholder="选择数据源"
               :disabled="props.canEdit"
             >
               <ElOption
@@ -227,7 +246,7 @@ const removeDataSource = (index: number) => {
           </ElFormItem>
         </div>
 
-        <div class="column-trial">
+        <div class="column-trial" style="width: 150px">
           <ElFormItem :prop="`data.${index}.trialValue`" class="no-margin">
             <ElInput
               v-model="item.trialValue"
@@ -244,8 +263,40 @@ const removeDataSource = (index: number) => {
         </div>
       </div>
 
-      <div class="mt-4" v-if="!props.canEdit">
-        <ElButton type="primary" plain @click="addDataSource"> 添加 </ElButton>
+      <div class="mt-2" v-if="!props.canEdit" style="margin-bottom: 30px">
+        <ElButton type="primary" plain @click="addDataSource">
+          + 添加
+        </ElButton>
+      </div>
+
+      <div class="data-row mb-3 flex items-center gap-3">
+        <span class="font-medium" style="font-size: 16px">响应检查</span>
+      </div>
+
+      <div
+        class="flex items-center gap-6 rounded border border-dashed border-gray-200 bg-gray-50 p-4"
+        style="width: fit-content"
+      >
+        <div class="flex items-center gap-3">
+          <span style="width: 40px; font-size: 14px; color: #666">字段</span>
+          <div style="width: 200px">
+            <ElInput
+              v-model="requestStatusField"
+              placeholder="例如: code"
+              :disabled="props.canEdit"
+            />
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span style="width: 20px; font-size: 14px; color: #666">值</span>
+          <div style="width: 120px">
+            <ElInput
+              v-model="requestStatusCode"
+              placeholder="200"
+              :disabled="props.canEdit"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -259,32 +310,6 @@ const removeDataSource = (index: number) => {
 </template>
 
 <style scoped>
-.editor-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  overflow: hidden;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #606266;
-  background-color: #f5f7fa;
-  border-bottom: 1px solid #dcdfe6;
-}
-
-.editor-wrapper {
-  width: 100%;
-  height: 400px; /* 必须给编辑器容器指定高度 */
-}
-
 /* 核心：统一每一列的宽度，确保垂直对齐 */
 .column-key {
   width: 180px;
@@ -315,5 +340,9 @@ const removeDataSource = (index: number) => {
 .data-row {
   display: flex;
   align-items: center;
+}
+
+.data-source-container :deep(.el-form-item__content) {
+  margin-left: 0 !important;
 }
 </style>

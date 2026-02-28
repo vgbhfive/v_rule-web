@@ -21,11 +21,13 @@ const props = defineProps<{
   data: DataCategoryDetail[];
   dataSourceList: { label: string; value: string }[];
   modelValue: boolean;
+  otherData: DataCategoryDetail[];
 }>();
 
 const emit = defineEmits([
   'update:modelValue',
   'update:data',
+  'update:other-data',
   'confirm',
   'trial',
 ]);
@@ -75,12 +77,9 @@ const handleEditorMount = (editor: any) => {
   editorRef.value = editor;
   editor.focus();
 
-  props.data.forEach((item) => {
+  console.log('done', props.data, props.otherData);
+  props.otherData.forEach((item) => {
     if (item.key === 'code') {
-      emit(
-        'update:data',
-        props.data.filter((_, i) => i !== props.data.indexOf(item)),
-      );
       pythonCode.value = item.value;
     }
   });
@@ -96,8 +95,8 @@ const getEditorCode = () => {
     trialValue: currentCode,
   };
 
-  // 将新数组传回父组件（克隆一份旧数组并加上新项）
-  emit('update:data', [...props.data, newItem]);
+  // 将新数组传回父组件
+  emit('update:other-data', [newItem]);
 };
 
 // 编辑器内容改变时触发
@@ -115,12 +114,8 @@ const handleClosed = () => {
 
 // 试算
 const handleTrial = () => {
-  for (let index = 0; index < props.data.length; index++) {
-    const element = props.data[index];
-    if (element?.key === 'code') {
-      removeDataSource(index);
-    }
-  }
+  // 清空其他数据
+  emit('update:other-data', []);
   getEditorCode();
   emit('trial', comment.value);
   isTrial.value = true;
@@ -259,7 +254,9 @@ const removeDataSource = (index: number) => {
       </div>
 
       <div class="mt-4" v-if="!props.canEdit">
-        <ElButton type="primary" plain @click="addDataSource"> 添加 </ElButton>
+        <ElButton type="primary" plain @click="addDataSource">
+          + 添加
+        </ElButton>
       </div>
     </div>
 
