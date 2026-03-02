@@ -118,3 +118,12 @@ export async function deployPass(params: Recordable<any>) {
 export async function getRollbackVersionList(params: Recordable<any>) {
   return requestClient.post<number[]>('/deploy/rollback/versions', params);
 }
+
+/**
+ * 回滚场景
+ * @param params
+ * @returns
+ */
+export async function rollbackDeploy(params: Recordable<any>) {
+  return requestClient.post('/deploy/rollback', params);
+}

@@ -77,7 +77,6 @@ const handleEditorMount = (editor: any) => {
   editorRef.value = editor;
   editor.focus();
 
-  console.log('done', props.data, props.otherData);
   props.otherData.forEach((item) => {
     if (item.key === 'code') {
       pythonCode.value = item.value;

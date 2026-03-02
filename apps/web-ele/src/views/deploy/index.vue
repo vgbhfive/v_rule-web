@@ -18,11 +18,13 @@ import {
   getDeployList,
   getNoDropdownList,
   getRollbackVersionList,
+  rollbackDeploy,
 } from '#/api/deploy';
 import { getSceneTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
 
 import DiffDialog from './DiffDialog.vue';
+import RollBackVersionDialog from './RollBackVersionDialog.vue';
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -413,8 +415,26 @@ async function handleDeployRollback(deployInfo: DeployInfo) {
   if (resp?.length <= 0) {
     ElMessage.warning('当前版本为首次上线，无法回滚');
   } else {
-    ElMessage.success('回滚成功');
-    console.log(resp);
+    loading.value = true;
+    rollbackDeployNo.value = deployInfo.no;
+    rollbackVisible.value = true;
+    rollbackData.value = resp;
+  }
+}
+async function handleDeployRollbackDone() {
+  if (rollbackVersion.value <= 0) {
+    ElMessage.warning('异常回滚版本！');
+  } else {
+    const params = {
+      type: 'scene',
+      deployNo: rollbackDeployNo.value,
+      version: rollbackVersion.value,
+    };
+    console.log(params);
+    const resp = await rollbackDeploy(params);
+    ElMessage.success(resp);
+    rollbackVisible.value = false;
+    rollbackData.value = [];
   }
 }
 
@@ -443,6 +463,12 @@ const diffData = ref<DeployDiffInfo | null>(null);
 const currentDeployInfo = ref<DeployInfo | null>(null);
 const loading = ref(false);
 const isDiff = ref(false);
+
+// 回滚
+const rollbackVisible = ref(false);
+const rollbackData = ref<number[]>([]);
+const rollbackDeployNo = ref('');
+const rollbackVersion = ref(0);
 </script>
 
 <template>
@@ -466,6 +492,15 @@ const isDiff = ref(false);
       :loading="loading"
       :is-diff="isDiff"
       @confirm="handleDeploySubmit"
+    />
+
+    <!-- 回滚版本列表弹窗 -->
+    <RollBackVersionDialog
+      v-model="rollbackVisible"
+      :data="rollbackData"
+      :loading="loading"
+      @update:version="rollbackVersion = $event"
+      @confirm="handleDeployRollbackDone"
     />
   </Page>
 </template>

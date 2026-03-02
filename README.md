@@ -17,7 +17,10 @@
 | 一键部署上线    | &check; | &check; | &check; |
 | 业务线数据管理    |         | &check; | &check; |
 | 用户权限管理     |         | &check; | &check; |
+| 冠军挑战者管理   |         | &check; | &check; |
+| 执行Python 代码   |         | &check; | &check; |
 | 三方接口接入     |         | &check; | &check; |
+| 评分卡         |         | &check; | &check; |
 | 规则树        |         | &check; | &check; |
 | 动态账期产品     |         | &check; | &check; |
 | 动态额度产品     |         | &check; | &check; |
@@ -35,7 +38,7 @@
 | 数据源指标监控     |         | &check; | &check; |
 | 技术支持       |         | &check; | &check; |
 | 专属模型、特征开发  |         |  | &check; |
-| 专属策略支持  |         |  | &check; |
+| 专属策略支持      |          |  | &check; |
 
 ### 联系
 vgbhfive@foxmail.com

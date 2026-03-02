@@ -132,6 +132,7 @@ export const errorMessageResponseInterceptor = (
 
       let errorMessage = '';
       const status = error?.response?.status;
+      console.log('status', status);
 
       switch (status) {
         case 400: {

@@ -54,7 +54,6 @@ onMounted(async () => {
 });
 
 const handleMount = () => {
-  console.log('done', props.data, props.otherData);
   props.otherData.forEach((item) => {
     switch (item.key) {
       case 'requestStatusCode': {
