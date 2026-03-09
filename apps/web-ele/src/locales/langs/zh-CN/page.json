@@ -13,7 +13,9 @@
     "title": "系统管理",
     "line": "业务线",
     "scene": "场景",
-    "user": "用户"
+    "user": "用户",
+    "userLine": "业务线权限",
+    "userOperate": "操作权限"
   },
   "data": {
     "title": "数据管理",

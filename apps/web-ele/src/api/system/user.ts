@@ -1,5 +1,7 @@
 import type { Recordable } from '@vben/types';
 
+import type { Dropdown } from './line';
+
 import { requestClient } from '#/api/request';
 
 export interface UserInfo {
@@ -71,4 +73,12 @@ export async function freeze(params: Recordable<any>) {
  */
 export async function normal(params: Recordable<any>) {
   return requestClient.post(`/user/normal`, params);
+}
+
+/**
+ * 用户下拉列表
+ * @returns
+ */
+export async function userDropdownList() {
+  return requestClient.post<Dropdown[]>('/user/dropdown');
 }

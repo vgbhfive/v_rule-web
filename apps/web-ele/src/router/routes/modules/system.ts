@@ -37,6 +37,22 @@ const routes: RouteRecordRaw[] = [
         path: '/user',
         component: () => import('#/views/system/user/index.vue'),
       },
+      {
+        meta: {
+          title: $t('page.system.userLine'),
+        },
+        name: 'UserLine',
+        path: '/user-line',
+        component: () => import('#/views/system/userLine/index.vue'),
+      },
+      {
+        meta: {
+          title: $t('page.system.userOperate'),
+        },
+        name: 'UserOperate',
+        path: '/user-operate',
+        component: () => import('#/views/system/userOperate/index.vue'),
+      },
     ],
   },
 ];

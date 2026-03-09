@@ -36,7 +36,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
         clearable: true,
       },
       fieldName: 'name',
-      label: '名称',
+      label: '用户名',
     },
     {
       component: 'Input',

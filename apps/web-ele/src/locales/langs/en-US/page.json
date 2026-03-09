@@ -13,7 +13,9 @@
     "title": "System Management",
     "line": "Line",
     "scene": "Scene",
-    "user": "User"
+    "user": "User",
+    "userLine": "Line Permission",
+    "userOperate": "Operate Permission"
   },
   "data": {
     "title": "Data Management",
