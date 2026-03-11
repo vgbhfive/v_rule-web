@@ -33,20 +33,31 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { name, email, mobile, token } = await loginApi(params);
+      const {
+        id,
+        name,
+        email,
+        mobile,
+        token,
+        buttonPermission,
+        pagePermission,
+      } = await loginApi(params);
 
       // 将 accessToken 存储到 accessStore 中
       accessStore.setAccessToken(token);
+      accessStore.setAccessCodes([...buttonPermission, ...pagePermission]);
 
       userInfo = {
+        id,
         name,
         email,
         mobile,
         token,
         roles: [],
+        buttonPermission,
+        pagePermission,
       } as UserInfo;
       userStore.setUserInfo(userInfo);
-      // accessStore.setAccessCodes(accessCodes);
 
       if (accessStore.loginExpired) {
         accessStore.setLoginExpired(false);
@@ -100,7 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     return userInfo;
   }
 
-  async function changePassword(params: Recordable<any>) {
+  async function changePassword(params: AuthApi.ChangePasswordParams) {
     const resp = await changePasswordApi(params);
     ElNotification.success(resp);
   }

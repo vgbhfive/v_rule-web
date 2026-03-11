@@ -9,9 +9,13 @@ type TabOption = BasicOption;
 
 interface BasicUserInfo {
   /**
-   * 用户id
+   * 用户email
    */
   email: string;
+  /**
+   * ID
+   */
+  id: number;
   /**
    * 用户昵称
    */

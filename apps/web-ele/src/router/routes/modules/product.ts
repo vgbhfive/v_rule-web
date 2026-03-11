@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       order: 1003,
       title: $t('page.product.title'),
     },
+    sign: 'product_manage',
     name: 'Product',
     path: '/product',
     children: [
@@ -17,6 +18,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.product.limit'),
         },
+        sign: 'product_limit_manage',
         name: 'Limit',
         path: '/product/limit',
         component: () => import('#/views/product/limit/index.vue'),
@@ -25,6 +27,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.product.interest'),
         },
+        sign: 'product_interest_manage',
         name: 'Interest',
         path: '/product/interest',
         component: () => import('#/views/product/interest/index.vue'),
@@ -33,6 +36,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.product.period'),
         },
+        sign: 'product_period_manage',
         name: 'Period',
         path: '/product/period',
         component: () => import('#/views/product/period/index.vue'),
@@ -41,6 +45,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.product.custom'),
         },
+        sign: 'product_custom_manage',
         name: 'Custom',
         path: '/product/custom',
         component: () => import('#/views/product/custom/index.vue'),

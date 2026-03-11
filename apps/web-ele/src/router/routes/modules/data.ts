@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       order: 1001,
       title: $t('page.data.title'),
     },
+    sign: 'data_manage',
     name: 'Data',
     path: '/data',
     children: [
@@ -17,6 +18,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.data.dataSource'),
         },
+        sign: 'data_source_manage',
         name: 'DataSource',
         path: '/dataSource',
         component: () => import('#/views/data/dataSource/index.vue'),
@@ -25,6 +27,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.data.dataCategory'),
         },
+        sign: 'data_category_manage',
         name: 'DataCategory',
         path: '/dataCategory',
         component: () => import('#/views/data/dataCategory/index.vue'),

@@ -10,6 +10,14 @@ interface UserInfo extends BasicUserInfo {
    * 用户角色列表
    */
   roles: string[];
+  /**
+   * 按钮权限
+   */
+  buttonPermission: string[];
+  /**
+   * 页面权限
+   */
+  pagePermission: string[];
 }
 
 export type { UserInfo };

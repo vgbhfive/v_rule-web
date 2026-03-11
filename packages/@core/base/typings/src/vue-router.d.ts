@@ -142,6 +142,7 @@ interface GenerateMenuAndRoutesOptions {
   roles?: string[];
   router: Router;
   routes: RouteRecordRaw[];
+  userInfo: UserInfo;
 }
 
 export type {

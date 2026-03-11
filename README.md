@@ -1,49 +1,53 @@
 ### vRule
-`vRule` 是一款面向高并发、高可用的智能风控规则决策引擎，其提供多种数据源接入、规则、规则集、策略集、分流器、产品管理等规则工具，可快速开发各种自定义产品场景。
+`vRule` 是一款基于 `Java` 的智能风控规则决策引擎，其提供规则、规则集、规则树、策略集、分流器、产品管理等规则管理工具，可以快速开发各种自定义场景的智能决策。
 
-### 基础功能
-| 特性         | 开源版     | Pro 版   | Max 版   |
-|------------|---------|---------|---------|
-| 用户管理       | &check; | &check; | &check; |
-| 业务线管理      | &check; | &check; | &check; |
-| 场景管理       | &check; | &check; | &check; |
-| 规则         | &check; | &check; | &check; |
-| 规则集        | &check; | &check; | &check; |
-| 策略集        | &check; | &check; | &check; |
-| 额度、利率、账期产品 | &check; | &check; | &check; |
-| 自定义产品      | &check; | &check; | &check; |
-| 分流器        | &check; | &check; | &check; |
-| 上线Diff     | &check; | &check; | &check; |
-| 一键部署上线    | &check; | &check; | &check; |
-| 业务线数据管理    |         | &check; | &check; |
-| 用户权限管理     |         | &check; | &check; |
-| 冠军挑战者管理   |         | &check; | &check; |
-| 执行Python 代码   |         | &check; | &check; |
-| 三方接口接入     |         | &check; | &check; |
-| 评分卡         |         | &check; | &check; |
-| 规则树        |         | &check; | &check; |
-| 动态账期产品     |         | &check; | &check; |
-| 动态额度产品     |         | &check; | &check; |
-| DAG           |         | &check; | &check; |
-| 标签插件       |         | &check; | &check; |
-| 自动入黑插件     |         | &check; | &check; |
-| 模型调用       |         | &check; | &check; |
-| 历史版本回滚     |         | &check; | &check; |
-| 上线指标观测   |         | &check; | &check; |
-| 流量重放       |         | &check; | &check; |
-| 重放指标观测   |         | &check; | &check; |
-| 用户流程标识     |         | &check; | &check; |
-| 场景指标监控     |         | &check; | &check; |
-| 场景分析报告     |         | &check; | &check; |
-| 数据源指标监控     |         | &check; | &check; |
-| 技术支持       |         | &check; | &check; |
-| 专属模型、特征开发  |         |  | &check; |
-| 专属策略支持      |          |  | &check; |
+### 功能特性
+ - 基础能力
+   - 业务线管理
+   - 场景管理
+   - 冠军挑战者管理
+   - 后台用户管理
+   - 业务线权限管理
+   - 用户操作管理
+ - 规则配置
+   - 规则
+   - 规则集
+   - 规则树
+   - 策略集
+   - 分流器
+ - 产品
+   - 额度
+   - 利率
+   - 账期
+   - 自定义
+   - 动态额度
+   - 动态账期
+ - 集成扩展
+   - `Python` 代码
+   - 标准 `HTTP` 接口接入
+   - 特殊 `HTTP` 接口接入
+   - 模型自动部署接入
+   - 标签插件
+   - 自动入黑
+   - 白名单列表
+   - 流程标记
+ - 发布监控
+   - 发布 `DIFF`
+   - 一键发布/回滚
+   - 流量重放
+ - 指标分析
+   - 场景级指标监控
+   - 关键特征指标监控
+   - 流量重放指标观测
+   - DAG
+   - 用户请求可视化
+   - 日/周/月分析报告
+ - 附加
+   - 专属技术支持
+   - 专属模型、特征开发
 
 ### 联系
 vgbhfive@foxmail.com
-
->开源版后端代码未开源，有需要的联系
 
 ### License
 Apache-2.0

@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       order: 1005,
       title: $t('page.divide.title'),
     },
+    sign: 'divide_data_manage',
     name: 'DivideManagement',
     path: '/divide',
     children: [
@@ -17,6 +18,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.divide.divide'),
         },
+        sign: 'divide_data_manage',
         name: 'Divide',
         path: '/divide',
         component: () => import('#/views/divide/index.vue'),

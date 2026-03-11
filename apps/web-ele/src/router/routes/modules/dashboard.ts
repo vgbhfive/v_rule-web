@@ -9,10 +9,12 @@ const routes: RouteRecordRaw[] = [
       order: -1,
       title: $t('page.dashboard.title'),
     },
+    sign: 'dashboard_manage',
     name: 'Dashboard',
     path: '/dashboard',
     children: [
       {
+        sign: 'dashboard_analytics_manage',
         name: 'Analytics',
         path: '/analytics',
         component: () => import('#/views/dashboard/analytics/index.vue'),

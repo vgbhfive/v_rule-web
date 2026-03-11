@@ -472,10 +472,6 @@ overrides:
 importers:
 
   .:
-    dependencies:
-      '@guolao/vue-monaco-editor':
-        specifier: ^1.6.0
-        version: 1.6.0(monaco-editor@0.55.1)(vue@3.5.26(typescript@5.9.3))
     devDependencies:
       '@changesets/changelog-github':
         specifier: 'catalog:'
@@ -483,6 +479,9 @@ importers:
       '@changesets/cli':
         specifier: 'catalog:'
         version: 2.29.8(@types/node@24.10.4)
+      '@guolao/vue-monaco-editor':
+        specifier: ^1.6.0
+        version: 1.6.0(monaco-editor@0.55.1)(vue@3.5.26(typescript@5.9.3))
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.57.0
@@ -570,6 +569,9 @@ importers:
 
   apps/web-ele:
     dependencies:
+      '@guolao/vue-monaco-editor':
+        specifier: ^1.6.0
+        version: 1.6.0(monaco-editor@0.55.1)(vue@3.5.26(typescript@5.9.3))
       '@vben/access':
         specifier: workspace:*
         version: link:../../packages/effects/access

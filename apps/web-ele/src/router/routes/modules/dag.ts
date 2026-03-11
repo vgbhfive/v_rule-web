@@ -10,18 +10,10 @@ const routes: RouteRecordRaw[] = [
       order: 1006,
       title: $t('page.dag.title'),
     },
+    sign: 'dag_manage',
     name: 'DAGManagement',
     path: '/dag',
-    children: [
-      {
-        meta: {
-          title: $t('page.dag.dag'),
-        },
-        name: 'Dag',
-        path: '/dag',
-        component: () => import('#/views/dag/index.vue'),
-      },
-    ],
+    component: () => import('#/views/dag/index.vue'),
   },
 ];
 

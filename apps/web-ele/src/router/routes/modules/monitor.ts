@@ -37,6 +37,14 @@ const routes: RouteRecordRaw[] = [
         path: '/monitor/reqId',
         component: () => import('#/views/monitor/reqId/index.vue'),
       },
+      {
+        meta: {
+          title: $t('page.monitor.requestRun'),
+        },
+        name: 'RequestRun',
+        path: '/monitor/rerun',
+        component: () => import('#/views/monitor/rerun/index.vue'),
+      },
     ],
   },
 ];

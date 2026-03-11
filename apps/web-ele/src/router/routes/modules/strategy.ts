@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       order: 1004,
       title: $t('page.strategy.title'),
     },
+    sign: 'strategy_data_manage',
     name: 'StrategyManagement',
     path: '/strategy',
     children: [
@@ -17,6 +18,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: $t('page.strategy.strategy'),
         },
+        sign: 'strategy_manage',
         name: 'Strategy',
         path: '/strategy',
         component: () => import('#/views/strategy/index.vue'),

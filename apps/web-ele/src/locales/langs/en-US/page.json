@@ -54,6 +54,7 @@
     "title": "Monitor Management",
     "sceneMonitor": "Scene Monitor",
     "fieldMonitor": "Data Source Monitor",
-    "reqIdMonitor": "ReqId User Request Visualization"
+    "reqIdMonitor": "ReqId User Request Visualization",
+    "requestRun": "Request Run"
   }
 }

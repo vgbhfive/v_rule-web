@@ -12,7 +12,10 @@ export namespace AuthApi {
     email: string;
     mobile: string;
     name: string;
+    id: number;
     token: string;
+    buttonPermission: string[];
+    pagePermission: string[];
   }
 
   export interface RefreshTokenResult {

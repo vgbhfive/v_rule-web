@@ -4,6 +4,7 @@ import { $t } from '#/locales';
 
 const routes: RouteRecordRaw[] = [
   {
+    sign: 'profile_manage',
     name: 'Profile',
     path: '/profile',
     component: () => import('#/views/_core/profile/index.vue'),

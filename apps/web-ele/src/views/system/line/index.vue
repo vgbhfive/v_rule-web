@@ -4,6 +4,7 @@ import type { LineInfo, LineParams } from '#/api/system';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -16,6 +17,8 @@ import {
   insertLine,
   updateLine,
 } from '#/api/system';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -87,6 +90,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['line_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -116,16 +120,22 @@ const gridOptions: VxeGridProps<LineInfo> = {
       width: 200,
       slots: {
         default: ({ row: lineInfo }: { row: LineInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(lineInfo),
-              },
-              { default: () => '编辑' },
-            ),
+          const buttons = [];
+
+          if (hasAccessByCodes(['line_manage_update'])) {
+            buttons.push(
+              h(
+                ElButton,
+                {
+                  type: 'primary',
+                  size: 'small',
+                  onClick: () => handleEdit(lineInfo),
+                },
+                { default: () => '编辑' },
+              ),
+            );
+          }
+          buttons.push(
             h(
               ElButton,
               {
@@ -133,10 +143,11 @@ const gridOptions: VxeGridProps<LineInfo> = {
                 size: 'small',
                 onClick: () => handleInfo(lineInfo),
               },
-              { default: () => '详情' },
+              {
+                default: () => '详情',
+              },
             ),
-          ];
-
+          );
           return h(
             'div',
             { class: 'flex flex-wrap gap-2 justify-center' },
@@ -452,7 +463,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['line_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

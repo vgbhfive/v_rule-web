@@ -8,7 +8,7 @@ export interface operatePermission {
   uniqueSign: string;
   type: number;
   parentId: number;
-  nextLevelOperatePermission?: operatePermission[];
+  children?: operatePermission[];
   checked?: boolean;
   indeterminate?: boolean;
 }

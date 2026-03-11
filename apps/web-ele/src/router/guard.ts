@@ -1,4 +1,4 @@
-import type { Router } from 'vue-router';
+import type { Router, RouteRecordRaw } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
@@ -38,6 +38,50 @@ function setupCommonGuard(router: Router) {
       stopProgress();
     }
   });
+}
+
+/**
+ * 根据权限递归过滤路由
+ * @param routes 待过滤的路由
+ * @param permissions 用户的权限标识列表
+ */
+function filterRoutesByPermission(
+  routes: RouteRecordRaw[],
+  permissions: string[],
+  isAdmin: boolean,
+): RouteRecordRaw[] {
+  if (isAdmin) {
+    return routes;
+  }
+  if (!permissions || permissions.length === 0) {
+    return []; // 如果用户没有任何页面权限，则返回空数组
+  }
+
+  const accessible: RouteRecordRaw[] = [];
+  for (const route of routes) {
+    const routeCopy = { ...route };
+    // 检查当前路由是否有权限
+    const hasPermission =
+      routeCopy.sign && permissions.includes(routeCopy.sign as string);
+
+    // 如果有子路由，递归过滤子路由
+    if (routeCopy.children) {
+      routeCopy.children = filterRoutesByPermission(
+        routeCopy.children,
+        permissions,
+        isAdmin,
+      );
+    }
+
+    // 如果路由本身有权限，或者其子路由经过滤后仍有剩余，则保留该路由
+    if (
+      hasPermission ||
+      (routeCopy.children && routeCopy.children.length > 0)
+    ) {
+      accessible.push(routeCopy);
+    }
+  }
+  return accessible;
 }
 
 /**
@@ -88,14 +132,22 @@ function setupAccessGuard(router: Router) {
     }
 
     // 更新用户信息
-    await authStore.fetchUserInfo();
+    const userInfo = await authStore.fetchUserInfo();
+
+    // 根据用户的 pagePermission 权限码，递归筛选可访问的路由
+    const filteredAccessRoutes = filterRoutesByPermission(
+      accessRoutes,
+      userInfo.pagePermission || [],
+      userInfo.email === 'admin',
+    );
 
     // 生成菜单和路由
     const { accessibleMenus, accessibleRoutes } = await generateAccess({
       roles: [], // 路由表,当前登录用户拥有的角色标识列表
       router,
       // 则会在菜单中显示，但是访问会被重定向到403
-      routes: accessRoutes,
+      routes: filteredAccessRoutes,
+      userInfo,
     });
 
     // 保存菜单信息和路由信息

@@ -87,9 +87,7 @@ const handleToggle = (
   const syncDown = (item: operatePermission, status: boolean) => {
     item.checked = status;
     item.indeterminate = false;
-    item.nextLevelOperatePermission?.forEach((child) =>
-      syncDown(child, status),
-    );
+    item.children?.forEach((child) => syncDown(child, status));
   };
   syncDown(node, isChecked);
 
@@ -98,7 +96,7 @@ const handleToggle = (
 };
 
 const updateParentStatus = (parent: operatePermission) => {
-  const children = parent.nextLevelOperatePermission || [];
+  const children = parent.children || [];
   if (children.length === 0) return;
 
   const checkedCount = children.filter((c) => c.checked).length;
@@ -113,15 +111,35 @@ const updateParentStatus = (parent: operatePermission) => {
 
 const getSelected = () => {
   const ids: Recordable<any>[] = [];
-  const collect = (list: operatePermission[]) => {
-    list.forEach((node) => {
-      if (node.checked)
-        ids.push({ uniqueSign: node.uniqueSign, type: node.type });
-      if (node.nextLevelOperatePermission)
-        collect(node.nextLevelOperatePermission);
-    });
+
+  /**
+   * 递归地检查并收集节点。
+   * @param node - 当前要处理的节点。
+   * @returns boolean - 如果当前节点或其任何子孙节点被选中，则返回 true。
+   */
+  const collect = (node: operatePermission): boolean => {
+    // 1. 首先，递归地检查所有子节点。
+    // hasCheckedChild 会在任何一个子递归返回 true 时变为 true。
+    const hasCheckedChild =
+      node.children?.map((child) => collect(child)).some(Boolean) || false;
+
+    // 2. 如果当前节点本身被选中，或者它有被选中的子孙节点，则认为该节点“激活”。
+    const isActive = node.checked || hasCheckedChild;
+
+    // 3. 如果节点是“激活”状态，则将其信息添加到结果数组中。
+    if (isActive) {
+      ids.push({ uniqueSign: node.uniqueSign, type: node.type });
+    }
+
+    // 4. 将当前节点的“激活”状态返回给其父节点。
+    return isActive;
   };
-  collect(operateOptions.value);
+
+  // 遍历所有顶级节点，启动递归收集过程。
+  operateOptions.value.forEach((node) => collect(node));
+
+  // 注意：这样收集到的 ids 列表，子节点会排在父节点前面。
+  // 对于权限集合，顺序通常不重要。如果需要，可以在此对 ids 进行反转。
   return ids;
 };
 
@@ -144,15 +162,14 @@ const initData = (tree: operatePermission[], ownIds: number[]) => {
     list.forEach((node) => {
       node.checked = ownIds.includes(node.id);
       node.indeterminate = false;
-      if (node.nextLevelOperatePermission)
-        traverse(node.nextLevelOperatePermission);
+      if (node.children) traverse(node.children);
     });
   };
   traverse(tree);
 
   // 2. 向上刷新半选状态（三层递进刷新）
   tree.forEach((l1) => {
-    l1.nextLevelOperatePermission?.forEach((l2) => {
+    l1.children?.forEach((l2) => {
       updateParentStatus(l2);
     });
     updateParentStatus(l1);
@@ -184,7 +201,7 @@ const initData = (tree: operatePermission[], ownIds: number[]) => {
 
           <div class="level-2-container">
             <div
-              v-for="level2 in level1.nextLevelOperatePermission"
+              v-for="level2 in level1.children"
               :key="level2.id"
               class="level-2-item"
             >
@@ -200,7 +217,7 @@ const initData = (tree: operatePermission[], ownIds: number[]) => {
 
               <div class="level-3-group">
                 <ElCheckbox
-                  v-for="level3 in level2.nextLevelOperatePermission"
+                  v-for="level3 in level2.children"
                   :key="level3.id"
                   v-model="level3.checked"
                   @change="(val) => handleToggle(level3, !!val, level2, level1)"
