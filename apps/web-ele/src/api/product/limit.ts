@@ -49,3 +49,12 @@ export async function createLimit(params: Recordable<any>) {
 export async function updateLimit(params: Recordable<any>) {
   return requestClient.post('/product/limit/update', params);
 }
+
+/**
+ * 更新额度产品状态
+ * @param params
+ * @returns
+ */
+export async function updateProductLimitValid(params: Recordable<any>) {
+  return requestClient.post('/product/limit/valid', params);
+}

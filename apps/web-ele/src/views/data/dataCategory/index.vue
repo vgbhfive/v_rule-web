@@ -8,6 +8,7 @@ import type {
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -28,6 +29,8 @@ import { getLineDropdownList } from '#/api/system';
 
 import HttpDialog from './HttpDialog.vue';
 import PythonDialog from './PythonDialog.vue';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const allCategoryMap = ref<Record<string, string>>({});
@@ -123,6 +126,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['data_category_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -173,15 +177,6 @@ const gridOptions: VxeGridProps<DataCategoryInfo> = {
             h(
               ElButton,
               {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(dataCategoryInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
                 type: 'info',
                 size: 'small',
                 onClick: () => handleInfo(dataCategoryInfo),
@@ -190,30 +185,46 @@ const gridOptions: VxeGridProps<DataCategoryInfo> = {
             ),
           ];
 
-          if (dataCategoryInfo.isValid === 0) {
+          if (hasAccessByCodes(['data_category_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(dataCategoryInfo),
+                  onClick: () => handleEdit(dataCategoryInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'warning',
-                  size: 'small',
-                  onClick: () => handleInvalid(dataCategoryInfo),
-                },
-                { default: () => '失效' },
-              ),
-            );
+          }
+
+          if (hasAccessByCodes(['data_category_manage_valid'])) {
+            if (dataCategoryInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(dataCategoryInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(dataCategoryInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -822,7 +833,10 @@ async function handleHttpConfirm() {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['data_category_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

@@ -4,6 +4,7 @@ import type { UserInfo, UserParams } from '#/api/system/user';
 
 import { h, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -17,6 +18,8 @@ import {
   normal,
   resetPassword,
 } from '#/api/system/user';
+
+const { hasAccessByCodes } = useAccess();
 
 // 查询表单配置
 const [QueryForm, queryFormApi] = useVbenForm({
@@ -85,6 +88,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['user_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -105,7 +109,7 @@ const gridOptions: VxeGridProps<UserInfo> = {
       field: 'status',
       title: '状态',
       formatter: ({ cellValue }) => {
-        return cellValue === 1 ? '冻结' : cellValue === 0 ? '正常' : '初始化';
+        return cellValue === 1 ? '冻结' : (cellValue === 0 ? '正常' : '初始化');
       },
     },
     { field: 'createAt', title: '创建时间' },
@@ -128,50 +132,60 @@ const gridOptions: VxeGridProps<UserInfo> = {
           ];
 
           if (userInfo.status === 0) {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'danger',
-                  size: 'small',
-                  onClick: () => handleFreeze(userInfo),
-                },
-                { default: () => '冻结' },
-              ),
-              h(
-                ElButton,
-                {
-                  type: 'warning',
-                  size: 'small',
-                  onClick: () => handleReset(userInfo),
-                },
-                { default: () => '重置' },
-              ),
-            );
+            if (hasAccessByCodes(['user_manage_freeze'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'danger',
+                    size: 'small',
+                    onClick: () => handleFreeze(userInfo),
+                  },
+                  { default: () => '冻结' },
+                ),
+              );
+            }
+            if (hasAccessByCodes(['user_manage_reset_password'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleReset(userInfo),
+                  },
+                  { default: () => '重置' },
+                ),
+              );
+            }
           } else if (userInfo.status === 1) {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'success',
-                  size: 'small',
-                  onClick: () => handleValid(userInfo),
-                },
-                { default: () => '正常' },
-              ),
-            );
+            if (hasAccessByCodes(['user_manage_normal'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(userInfo),
+                  },
+                  { default: () => '正常' },
+                ),
+              );
+            }
           } else {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'danger',
-                  size: 'small',
-                  onClick: () => handleFreeze(userInfo),
-                },
-                { default: () => '冻结' },
-              ),
-            );
+            if (hasAccessByCodes(['user_manage_freeze'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'danger',
+                    size: 'small',
+                    onClick: () => handleFreeze(userInfo),
+                  },
+                  { default: () => '冻结' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -476,7 +490,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['user_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

@@ -20,6 +20,9 @@ import {
   createStrategy
 } from '#/api/strategy';
 import { getLineDropdownList } from '#/api/system';
+import { useAccess } from '@vben/access';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -129,6 +132,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['strategy_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -175,51 +179,62 @@ const gridOptions: VxeGridProps<StrategyInfo> = {
       width: 200,
       slots: {
         default: ({ row: strategyInfo }: { row: StrategyInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(strategyInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(strategyInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
-          if (strategyInfo.isValid === 0) {
+          if (hasAccessByCodes(['strategy_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(strategyInfo),
+                  onClick: () => handleEdit(strategyInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
-            );
-          } else {
+            )
+          }
+
+          if (hasAccessByCodes(['strategy_manage_detail'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'warning',
+                  type: 'info',
                   size: 'small',
-                  onClick: () => handleInvalid(strategyInfo),
+                  onClick: () => handleInfo(strategyInfo),
                 },
-                { default: () => '失效' },
+                { default: () => '详情' },
               ),
-            );
+            )
+          }
+
+          if (hasAccessByCodes(['strategy_manage_valid'])) {
+            if (strategyInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(strategyInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(strategyInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -373,8 +388,8 @@ async function handleInfo(row: StrategyInfo) {
   });
   const values = {
     ...detail,
-    ruleList
-  }
+    ruleList,
+  };
   // 填充表单数据
   editFormApi.setValues(values);
   // 设置全部字段不可编辑
@@ -697,7 +712,7 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div class="mb-4 mt-4 flex justify-start pl-[15px]" v-if="hasAccessByCodes(['strategy_manage_create'])">
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

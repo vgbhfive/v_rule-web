@@ -4,6 +4,7 @@ import type { CustomInfo, CustomParams, DetailList } from '#/api/product';
 
 import { h, onMounted, reactive, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import {
@@ -26,9 +27,11 @@ import {
   customDetail,
   getCustomList,
   updateCustom,
-  updateProductValid,
+  updateProductCustomValid,
 } from '#/api/product';
 import { getLineDropdownList } from '#/api/system';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -124,6 +127,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['product_custom_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -162,51 +166,62 @@ const gridOptions: VxeGridProps<CustomInfo> = {
       width: 200,
       slots: {
         default: ({ row: customInfo }: { row: CustomInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(customInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(customInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
-          if (customInfo.isValid === 0) {
+          if (hasAccessByCodes(['product_custom_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(customInfo),
+                  onClick: () => handleEdit(customInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
+          }
+
+          if (hasAccessByCodes(['product_custom_manage_detail'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'warning',
+                  type: 'info',
                   size: 'small',
-                  onClick: () => handleInvalid(customInfo),
+                  onClick: () => handleInfo(customInfo),
                 },
-                { default: () => '失效' },
+                { default: () => '详情' },
               ),
             );
+          }
+
+          if (hasAccessByCodes(['product_custom_manage_valid'])) {
+            if (customInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(customInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(customInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -331,7 +346,7 @@ async function handleEdit(row: CustomInfo) {
 async function handleValid(row: CustomInfo) {
   try {
     const data = { id: row.id, isValid: 1 };
-    const resp = await updateProductValid(data);
+    const resp = await updateProductCustomValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -345,7 +360,7 @@ async function handleValid(row: CustomInfo) {
 async function handleInvalid(row: CustomInfo) {
   try {
     const data = { id: row.id, isValid: 0 };
-    const resp = await updateProductValid(data);
+    const resp = await updateProductCustomValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -470,7 +485,10 @@ async function handleLineChange() {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['product_custom_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

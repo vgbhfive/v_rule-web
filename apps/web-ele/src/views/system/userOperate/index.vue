@@ -5,6 +5,7 @@ import type { operatePermission } from '#/api/system/userOperate';
 
 import { onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElCheckbox, ElMessage } from 'element-plus';
@@ -16,6 +17,8 @@ import {
   getUserOperateList,
   updateUserOperate,
 } from '#/api/system/userOperate';
+
+const { hasAccessByCodes } = useAccess();
 
 const userOptions = ref<{ label: string; value: string }[]>([]);
 const operateOptions = ref<operatePermission[]>([]);
@@ -61,6 +64,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['user_operate_manage']),
   },
   wrapperClass: 'grid-cols-4',
 });
@@ -229,7 +233,10 @@ const initData = (tree: operatePermission[], ownIds: number[]) => {
           </div>
         </div>
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['user_operate_manage_update'])"
+      >
         <ElButton type="primary" @click="handleUpdate" size="default">
           <i class="el-icon-plus mr-1"></i>
           保存

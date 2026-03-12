@@ -3,6 +3,7 @@ import type { Recordable } from '@vben/types';
 
 import { onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElCheckbox, ElCheckboxGroup, ElMessage } from 'element-plus';
@@ -11,6 +12,8 @@ import { useVbenForm } from '#/adapter/form';
 import { getLineDropdownList } from '#/api/system';
 import { userDropdownList } from '#/api/system/user';
 import { getUserLineList, updateUserLine } from '#/api/system/userLine';
+
+const { hasAccessByCodes } = useAccess();
 
 const userOptions = ref<{ label: string; value: string }[]>([]);
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -54,6 +57,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['user_line_manage']),
   },
   wrapperClass: 'grid-cols-4',
 });
@@ -100,7 +104,10 @@ async function handleUpdate() {
           </ElCheckbox>
         </ElCheckboxGroup>
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['user_line_manage_update'])"
+      >
         <ElButton type="primary" @click="handleUpdate" size="default">
           <i class="el-icon-plus mr-1"></i>
           保存

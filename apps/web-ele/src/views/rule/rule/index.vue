@@ -5,6 +5,7 @@ import type { SceneParams } from '#/api/system';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -20,6 +21,8 @@ import {
   updateRuleValid,
 } from '#/api/rule';
 import { getLineDropdownList } from '#/api/system';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const allValueMap = ref<Record<string, string>>({});
@@ -135,6 +138,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['rule_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -189,15 +193,6 @@ const gridOptions: VxeGridProps<RuleInfo> = {
             h(
               ElButton,
               {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(ruleInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
                 type: 'info',
                 size: 'small',
                 onClick: () => handleInfo(ruleInfo),
@@ -206,30 +201,46 @@ const gridOptions: VxeGridProps<RuleInfo> = {
             ),
           ];
 
-          if (ruleInfo.isValid === 0) {
+          if (hasAccessByCodes(['rule_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(ruleInfo),
+                  onClick: () => handleEdit(ruleInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'warning',
-                  size: 'small',
-                  onClick: () => handleInvalid(ruleInfo),
-                },
-                { default: () => '失效' },
-              ),
-            );
+          }
+
+          if (hasAccessByCodes(['rule_manage_valid'])) {
+            if (ruleInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(ruleInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(ruleInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -897,7 +908,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['rule_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAddFixed" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增值规则

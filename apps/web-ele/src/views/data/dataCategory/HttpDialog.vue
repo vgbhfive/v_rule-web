@@ -3,6 +3,8 @@ import type { DataCategoryDetail } from '#/api/data';
 
 import { computed, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
+
 import {
   ElButton,
   ElDialog,
@@ -30,6 +32,8 @@ const emit = defineEmits([
   'confirm',
   'trial',
 ]);
+
+const { hasAccessByCodes } = useAccess();
 
 const visible = computed({
   get: () => props.modelValue,
@@ -301,7 +305,13 @@ const removeDataSource = (index: number) => {
 
     <template #footer v-if="!props.canEdit">
       <div class="flex justify-end">
-        <ElButton type="warning" @click="handleTrial"> 试算 </ElButton>
+        <ElButton
+          type="warning"
+          @click="handleTrial"
+          v-if="hasAccessByCodes(['data_category_manage_trial'])"
+        >
+          试算
+        </ElButton>
         <ElButton type="primary" @click="handleConfirm"> 提交 </ElButton>
       </div>
     </template>

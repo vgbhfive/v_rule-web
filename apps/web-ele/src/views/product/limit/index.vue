@@ -4,6 +4,7 @@ import type { LimitInfo } from '#/api/product';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page, z } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -16,9 +17,11 @@ import {
   createLimit,
   getLimitList,
   updateLimit,
-  updateProductValid,
+  updateProductLimitValid,
 } from '#/api/product';
 import { getLineDropdownList } from '#/api/system';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -128,6 +131,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['product_limit_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -179,15 +183,6 @@ const gridOptions: VxeGridProps<LimitInfo> = {
             h(
               ElButton,
               {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(limitInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
                 type: 'info',
                 size: 'small',
                 onClick: () => handleInfo(limitInfo),
@@ -196,30 +191,46 @@ const gridOptions: VxeGridProps<LimitInfo> = {
             ),
           ];
 
-          if (limitInfo.isValid === 0) {
+          if (hasAccessByCodes(['product_limit_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(limitInfo),
+                  onClick: () => handleEdit(limitInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'warning',
-                  size: 'small',
-                  onClick: () => handleInvalid(limitInfo),
-                },
-                { default: () => '失效' },
-              ),
-            );
+          }
+
+          if (hasAccessByCodes(['product_limit_manage_valid'])) {
+            if (limitInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(limitInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(limitInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -625,7 +636,7 @@ async function handleEdit(row: LimitInfo) {
 async function handleValid(row: LimitInfo) {
   try {
     const data = { id: row.id, isValid: 1 };
-    const resp = await updateProductValid(data);
+    const resp = await updateProductLimitValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -639,7 +650,7 @@ async function handleValid(row: LimitInfo) {
 async function handleInvalid(row: LimitInfo) {
   try {
     const data = { id: row.id, isValid: 0 };
-    const resp = await updateProductValid(data);
+    const resp = await updateProductLimitValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -809,7 +820,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['product_limit_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

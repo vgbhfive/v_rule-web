@@ -4,6 +4,7 @@ import type { DataSourceInfo, DataSourceParams } from '#/api/data';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -19,6 +20,8 @@ import {
 } from '#/api/data';
 import { getFieldTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const fieldTypeMap = ref<Record<string, string>>({});
@@ -148,6 +151,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['data_source_manage']),
   },
   handleValuesChange: onQueryChange,
   wrapperClass: 'grid-cols-3 grid-cols-4',
@@ -219,15 +223,6 @@ const gridOptions: VxeGridProps<DataSourceInfo> = {
             h(
               ElButton,
               {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(dataSourceInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
                 type: 'info',
                 size: 'small',
                 onClick: () => handleInfo(dataSourceInfo),
@@ -236,30 +231,46 @@ const gridOptions: VxeGridProps<DataSourceInfo> = {
             ),
           ];
 
-          if (dataSourceInfo.isValid === 0) {
+          if (hasAccessByCodes(['data_source_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(dataSourceInfo),
+                  onClick: () => handleEdit(dataSourceInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'warning',
-                  size: 'small',
-                  onClick: () => handleInvalid(dataSourceInfo),
-                },
-                { default: () => '失效' },
-              ),
-            );
+          }
+
+          if (hasAccessByCodes(['data_source_manage_valid'])) {
+            if (dataSourceInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(dataSourceInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(dataSourceInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -741,7 +752,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['data_source_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

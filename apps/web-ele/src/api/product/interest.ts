@@ -48,3 +48,12 @@ export async function createInterest(params: Recordable<any>) {
 export async function updateInterest(params: Recordable<any>) {
   return requestClient.post('/product/interest/update', params);
 }
+
+/**
+ * 更新利率产品状态
+ * @param params
+ * @returns
+ */
+export async function updateProductInterestValid(params: Recordable<any>) {
+  return requestClient.post('/product/interest/valid', params);
+}

@@ -50,3 +50,12 @@ export async function createPeriod(params: Recordable<any>) {
 export async function updatePeriod(params: Recordable<any>) {
   return requestClient.post('/product/period/update', params);
 }
+
+/**
+ * 更新账期产品状态
+ * @param params
+ * @returns
+ */
+export async function updateProductPeriodValid(params: Recordable<any>) {
+  return requestClient.post('/product/period/valid', params);
+}

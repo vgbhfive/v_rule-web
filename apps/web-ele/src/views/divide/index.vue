@@ -4,6 +4,7 @@ import type { DivideInfo } from '#/api/divide';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -21,6 +22,8 @@ import { getProductDropdownList } from '#/api/product';
 import { getStrategyDropdownList } from '#/api/strategy';
 import { getLineDropdownList } from '#/api/system';
 import { getSceneDropdownList } from '#/api/system/scene';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -120,6 +123,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['divide_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -183,51 +187,62 @@ const gridOptions: VxeGridProps<DivideInfo> = {
       width: 200,
       slots: {
         default: ({ row: divideInfo }: { row: DivideInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(divideInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(divideInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
-          if (divideInfo.isValid === 0) {
+          if (hasAccessByCodes(['divide_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(divideInfo),
+                  onClick: () => handleEdit(divideInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
+          }
+
+          if (hasAccessByCodes(['divide_manage_detail'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'warning',
+                  type: 'info',
                   size: 'small',
-                  onClick: () => handleInvalid(divideInfo),
+                  onClick: () => handleInfo(divideInfo),
                 },
-                { default: () => '失效' },
+                { default: () => '详情' },
               ),
             );
+          }
+
+          if (hasAccessByCodes(['divide_manage_valid'])) {
+            if (divideInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(divideInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(divideInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -1066,7 +1081,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['divide_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增

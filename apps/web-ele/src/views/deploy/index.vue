@@ -5,6 +5,7 @@ import type { DeployDiffInfo, DeployDoneInfo, DeployInfo } from '#/api/deploy';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 
 import { ElButton, ElMessage, ElTabPane, ElTabs } from 'element-plus';
@@ -25,6 +26,8 @@ import { getLineDropdownList } from '#/api/system';
 
 import DiffDialog from './DiffDialog.vue';
 import RollBackVersionDialog from './RollBackVersionDialog.vue';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -122,6 +125,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['deploy_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -192,35 +196,50 @@ const [SceneTable, deployTableApi] = useVbenVxeGrid({
         width: 250,
         slots: {
           default: ({ row: deployInfo }: { row: DeployInfo }) => {
-            const buttons = [
-              h(
-                ElButton,
-                {
-                  type: 'primary',
-                  size: 'small',
-                  onClick: () => handleDeploy(deployInfo),
-                },
-                { default: () => '上线' },
-              ),
-              h(
-                ElButton,
-                {
-                  type: 'info',
-                  size: 'small',
-                  onClick: () => handleDeployDiff(deployInfo),
-                },
-                { default: () => 'DIFF' },
-              ),
-              h(
-                ElButton,
-                {
-                  type: 'danger',
-                  size: 'small',
-                  onClick: () => handleDeployRollback(deployInfo),
-                },
-                { default: () => '回滚' },
-              ),
-            ];
+            const buttons = [];
+
+            if (hasAccessByCodes(['deploy_manage_deploy'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'primary',
+                    size: 'small',
+                    onClick: () => handleDeploy(deployInfo),
+                  },
+                  { default: () => '上线' },
+                ),
+              );
+            }
+
+            if (hasAccessByCodes(['deploy_manage_diff'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'info',
+                    size: 'small',
+                    onClick: () => handleDeployDiff(deployInfo),
+                  },
+                  { default: () => 'DIFF' },
+                ),
+              );
+            }
+
+            if (hasAccessByCodes(['deploy_manage_rollback'])) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'danger',
+                    size: 'small',
+                    onClick: () => handleDeployRollback(deployInfo),
+                  },
+                  { default: () => '回滚' },
+                ),
+              );
+            }
+
             return h(
               'div',
               { class: 'flex flex-wrap gap-2 justify-center' },
@@ -430,7 +449,6 @@ async function handleDeployRollbackDone() {
       deployNo: rollbackDeployNo.value,
       version: rollbackVersion.value,
     };
-    console.log(params);
     const resp = await rollbackDeploy(params);
     ElMessage.success(resp);
     rollbackVisible.value = false;

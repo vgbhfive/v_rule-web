@@ -63,3 +63,12 @@ export async function createCustom(params: Recordable<any>) {
 export async function updateCustom(params: Recordable<any>) {
   return requestClient.post('/product/custom/update', params);
 }
+
+/**
+ * 更新自定义产品状态
+ * @param params
+ * @returns
+ */
+export async function updateProductCustomValid(params: Recordable<any>) {
+  return requestClient.post('/product/custom/valid', params);
+}

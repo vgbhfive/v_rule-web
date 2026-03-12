@@ -4,6 +4,7 @@ import type { PeriodInfo, PeriodParams } from '#/api/product';
 
 import { h, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page, z } from '@vben/common-ui';
 
 import { ElButton, ElDrawer, ElMessage } from 'element-plus';
@@ -11,14 +12,16 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDataSourceDropdownList } from '#/api/data';
-import { getValueTypes, getPeriodTypes } from '#/api/enums';
+import { getPeriodTypes, getValueTypes } from '#/api/enums';
 import {
   createPeriod,
   getPeriodList,
   updatePeriod,
-  updateProductValid,
+  updateProductPeriodValid,
 } from '#/api/product';
 import { getLineDropdownList } from '#/api/system';
+
+const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
@@ -128,6 +131,7 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
+    show: hasAccessByCodes(['product_period_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
@@ -187,15 +191,6 @@ const gridOptions: VxeGridProps<PeriodInfo> = {
             h(
               ElButton,
               {
-                type: 'primary',
-                size: 'small',
-                onClick: () => handleEdit(periodInfo),
-              },
-              { default: () => '编辑' },
-            ),
-            h(
-              ElButton,
-              {
                 type: 'info',
                 size: 'small',
                 onClick: () => handleInfo(periodInfo),
@@ -204,30 +199,46 @@ const gridOptions: VxeGridProps<PeriodInfo> = {
             ),
           ];
 
-          if (periodInfo.isValid === 0) {
+          if (hasAccessByCodes(['product_period_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
-                  type: 'success',
+                  type: 'primary',
                   size: 'small',
-                  onClick: () => handleValid(periodInfo),
+                  onClick: () => handleEdit(periodInfo),
                 },
-                { default: () => '生效' },
+                { default: () => '编辑' },
               ),
             );
-          } else {
-            buttons.push(
-              h(
-                ElButton,
-                {
-                  type: 'warning',
-                  size: 'small',
-                  onClick: () => handleInvalid(periodInfo),
-                },
-                { default: () => '失效' },
-              ),
-            );
+          }
+
+          if (hasAccessByCodes(['product_period_manage_valid'])) {
+            if (periodInfo.isValid === 0) {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    onClick: () => handleValid(periodInfo),
+                  },
+                  { default: () => '生效' },
+                ),
+              );
+            } else {
+              buttons.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'warning',
+                    size: 'small',
+                    onClick: () => handleInvalid(periodInfo),
+                  },
+                  { default: () => '失效' },
+                ),
+              );
+            }
           }
 
           return h(
@@ -261,7 +272,7 @@ const gridOptions: VxeGridProps<PeriodInfo> = {
   },
 };
 
-const gridEvents: VxeGridListeners<InterestInfo> = {
+const gridEvents: VxeGridListeners<PeriodInfo> = {
   // 可以添加表格事件监听
 };
 
@@ -269,7 +280,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditing = ref<InterestInfo | null>(null);
+const currentEditing = ref<null | PeriodInfo>(null);
 const drawerTitle = ref('');
 const preValueType = ref('');
 const isAdd = ref(false);
@@ -662,7 +673,7 @@ async function handleEdit(row: PeriodInfo) {
 async function handleValid(row: PeriodInfo) {
   try {
     const data = { id: row.id, isValid: 1 };
-    const resp = await updateProductValid(data);
+    const resp = await updateProductPeriodValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -676,7 +687,7 @@ async function handleValid(row: PeriodInfo) {
 async function handleInvalid(row: PeriodInfo) {
   try {
     const data = { id: row.id, isValid: 0 };
-    const resp = await updateProductValid(data);
+    const resp = await updateProductPeriodValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -846,7 +857,10 @@ function handleDrawerClose(done: () => void) {
       <div class="w-full">
         <QueryForm />
       </div>
-      <div class="mb-4 mt-4 flex justify-start pl-[15px]">
+      <div
+        class="mb-4 mt-4 flex justify-start pl-[15px]"
+        v-if="hasAccessByCodes(['product_period_manage_create'])"
+      >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
           新增
