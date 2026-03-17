@@ -179,17 +179,7 @@ const gridOptions: VxeGridProps<LimitInfo> = {
       width: 200,
       slots: {
         default: ({ row: limitInfo }: { row: LimitInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(limitInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['product_limit_manage_update'])) {
             buttons.push(
@@ -204,6 +194,18 @@ const gridOptions: VxeGridProps<LimitInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(limitInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['product_limit_manage_valid'])) {
             if (limitInfo.isValid === 0) {

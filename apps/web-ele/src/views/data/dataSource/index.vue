@@ -219,17 +219,7 @@ const gridOptions: VxeGridProps<DataSourceInfo> = {
       width: 250,
       slots: {
         default: ({ row: dataSourceInfo }: { row: DataSourceInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(dataSourceInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['data_source_manage_update'])) {
             buttons.push(
@@ -244,6 +234,18 @@ const gridOptions: VxeGridProps<DataSourceInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(dataSourceInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['data_source_manage_valid'])) {
             if (dataSourceInfo.isValid === 0) {

@@ -189,17 +189,7 @@ const gridOptions: VxeGridProps<RuleInfo> = {
       width: 250,
       slots: {
         default: ({ row: ruleInfo }: { row: RuleInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(ruleInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['rule_manage_update'])) {
             buttons.push(
@@ -214,6 +204,18 @@ const gridOptions: VxeGridProps<RuleInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(ruleInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['rule_manage_valid'])) {
             if (ruleInfo.isValid === 0) {

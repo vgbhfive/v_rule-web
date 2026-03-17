@@ -187,17 +187,7 @@ const gridOptions: VxeGridProps<InterestInfo> = {
       width: 200,
       slots: {
         default: ({ row: interestInfo }: { row: InterestInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(interestInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['product_interest_manage_update'])) {
             buttons.push(
@@ -212,6 +202,18 @@ const gridOptions: VxeGridProps<InterestInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(interestInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['product_interest_manage_valid'])) {
             if (interestInfo.isValid === 0) {

@@ -173,17 +173,7 @@ const gridOptions: VxeGridProps<DataCategoryInfo> = {
       width: 250,
       slots: {
         default: ({ row: dataCategoryInfo }: { row: DataCategoryInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(dataCategoryInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['data_category_manage_update'])) {
             buttons.push(
@@ -198,6 +188,18 @@ const gridOptions: VxeGridProps<DataCategoryInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(dataCategoryInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['data_category_manage_valid'])) {
             if (dataCategoryInfo.isValid === 0) {
@@ -818,7 +820,7 @@ async function handleTrial() {
     sourceFrom: editData.sourceFrom,
   };
   const resp = await dataCategoryTrial(data);
-  ElMessage.success(resp);
+  ElMessage.success({ message: resp, duration: 5000 });
 }
 
 // HTTP数据源分类提交

@@ -187,17 +187,7 @@ const gridOptions: VxeGridProps<PeriodInfo> = {
       width: 200,
       slots: {
         default: ({ row: periodInfo }: { row: PeriodInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(periodInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['product_period_manage_update'])) {
             buttons.push(
@@ -212,6 +202,18 @@ const gridOptions: VxeGridProps<PeriodInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(periodInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['product_period_manage_valid'])) {
             if (periodInfo.isValid === 0) {

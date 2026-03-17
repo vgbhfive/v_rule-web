@@ -181,23 +181,13 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
         return cellValue === 1 ? '生效' : '失效';
       },
     },
-    { field: 'createAt', title: '创建时间' },
+    { field: 'deployAt', title: '上线时间' },
     {
       title: '操作',
       width: 200,
       slots: {
         default: ({ row: ruleSetInfo }: { row: RuleSetInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(ruleSetInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['rule_set_manage_update'])) {
             buttons.push(
@@ -212,6 +202,18 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(ruleSetInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['rule_set_manage_update'])) {
             if (ruleSetInfo.isValid === 0) {

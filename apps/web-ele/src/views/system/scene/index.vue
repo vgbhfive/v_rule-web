@@ -149,17 +149,7 @@ const gridOptions: VxeGridProps<SceneInfo> = {
       width: 250,
       slots: {
         default: ({ row: sceneInfo }: { row: SceneInfo }) => {
-          const buttons = [
-            h(
-              ElButton,
-              {
-                type: 'info',
-                size: 'small',
-                onClick: () => handleInfo(sceneInfo),
-              },
-              { default: () => '详情' },
-            ),
-          ];
+          const buttons = [];
 
           if (hasAccessByCodes(['scene_manage_update'])) {
             buttons.push(
@@ -174,6 +164,18 @@ const gridOptions: VxeGridProps<SceneInfo> = {
               ),
             );
           }
+
+          buttons.push(
+            h(
+              ElButton,
+              {
+                type: 'info',
+                size: 'small',
+                onClick: () => handleInfo(sceneInfo),
+              },
+              { default: () => '详情' },
+            ),
+          );
 
           if (hasAccessByCodes(['scene_manage_valid'])) {
             if (sceneInfo.isValid === 0) {

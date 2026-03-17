@@ -173,7 +173,7 @@ const gridOptions: VxeGridProps<StrategyInfo> = {
       },
     },
     { field: 'createAt', title: '创建时间' },
-    { field: 'deployAt', title: '部署时间' },
+    { field: 'deployAt', title: '上线时间' },
     {
       title: '操作',
       width: 200,

@@ -28,7 +28,6 @@ function useAccess() {
    */
   function hasAccessByCodes(codes: string[]) {
     const userCodesSet = new Set(accessStore.accessCodes);
-    console.log(userCodesSet);
     if (userStore.userInfo?.email === 'admin') {
       return true;
     }
