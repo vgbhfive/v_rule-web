@@ -25,6 +25,7 @@ const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
+const dataSourceMap = ref<Record<string, string>>({});
 const allValueMap = ref<Record<string, string>>({});
 const allValueOptions = ref<{ label: string; value: string }[]>([]);
 const unitMap = ref<Record<string, string>>({});
@@ -41,6 +42,14 @@ onMounted(async () => {
     label: item.key,
     value: item.value,
   }));
+
+  // 数据源
+  const dataSourceList = await getDataSourceDropdownList({ lineNo: '' });
+  const newDataSourceMap: Record<string, string> = {};
+  for (const item of dataSourceList) {
+    newDataSourceMap[item.value] = item.key;
+  }
+  dataSourceMap.value = newDataSourceMap;
 
   // 阈值类型
   const valueList = await getValueTypes();
@@ -155,7 +164,14 @@ const gridOptions: VxeGridProps<LimitInfo> = {
     },
     { field: 'productName', title: '名称' },
     { field: 'productNo', title: '编码' },
-    { field: 'value', title: '值' },
+    {
+      field: 'value',
+      title: '值',
+      slots: {
+        default: ({ row }: { row: LimitInfo }) =>
+          dataSourceMap.value[row.value] || row.value,
+      },
+    },
     {
       field: 'valueType',
       title: '值类型',

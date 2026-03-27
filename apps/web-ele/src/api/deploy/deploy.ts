@@ -54,6 +54,11 @@ export interface diffDetail {
   }[];
 }
 
+export interface rollbackVersion {
+  version: number;
+  deployDesc: string;
+}
+
 /**
  * 获取可上线的场景列表
  * @param param
@@ -116,7 +121,10 @@ export async function deployPass(params: Recordable<any>) {
  * @returns
  */
 export async function getRollbackVersionList(params: Recordable<any>) {
-  return requestClient.post<number[]>('/deploy/rollback/versions', params);
+  return requestClient.post<rollbackVersion[]>(
+    '/deploy/rollback/versions',
+    params,
+  );
 }
 
 /**

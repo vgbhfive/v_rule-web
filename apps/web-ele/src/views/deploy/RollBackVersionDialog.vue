@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { rollbackVersion } from '#/api/deploy';
+
 import { computed, ref } from 'vue';
 
 import { ElButton, ElDialog, ElOption, ElSelect } from 'element-plus';
 
 const props = defineProps<{
-  data: number[];
+  data: rollbackVersion[];
   loading: boolean;
   modelValue: boolean;
 }>();
@@ -18,7 +20,7 @@ const visible = computed({
 
 const comment = ref('');
 const activeNames = ref<string[]>([]);
-const version = ref(0);
+const version = ref('');
 
 const handleConfirm = () => {
   emit('update:version', version.value);
@@ -28,6 +30,7 @@ const handleConfirm = () => {
 const handleClosed = () => {
   comment.value = '';
   activeNames.value = [];
+  version.value = '';
 };
 </script>
 
@@ -43,9 +46,9 @@ const handleClosed = () => {
       <ElSelect v-model="version" placeholder="选择版本">
         <ElOption
           v-for="option in props.data"
-          :key="option"
-          :label="option"
-          :value="option"
+          :key="option.version"
+          :label="`${option.version} - ${option.deployDesc}`"
+          :value="option.version"
         />
       </ElSelect>
     </div>

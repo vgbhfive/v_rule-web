@@ -25,6 +25,7 @@ import { getLineDropdownList } from '#/api/system';
 const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
+const dataSourceMap = ref<Record<string, string>>({});
 const allValueMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
 const conditionTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -41,6 +42,14 @@ onMounted(async () => {
     label: item.key,
     value: item.value,
   }));
+
+  // 数据源
+  const dataSourceList = await getDataSourceDropdownList({ lineNo: '' });
+  const newDataSourceMap: Record<string, string> = {};
+  for (const item of dataSourceList) {
+    newDataSourceMap[item.value] = item.key;
+  }
+  dataSourceMap.value = newDataSourceMap;
 
   // 阈值类型
   const valueList = await getValueTypes();
@@ -162,7 +171,14 @@ const gridOptions: VxeGridProps<RuleInfo> = {
     },
     { field: 'ruleName', title: '名称' },
     { field: 'ruleNo', title: '编码' },
-    { field: 'dataSourceNo', title: '数据源' },
+    {
+      field: 'dataSourceNo',
+      title: '数据源',
+      slots: {
+        default: ({ row }: { row: RuleInfo }) =>
+          dataSourceMap.value[row.dataSourceNo] || row.dataSourceNo,
+      },
+    },
     { field: 'cond', title: '条件', width: 50 },
     { field: 'threshold', title: '阈值' },
     {

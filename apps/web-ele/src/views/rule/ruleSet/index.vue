@@ -31,6 +31,7 @@ const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
+const ruleMap = ref<Record<string, string>>({});
 const ruleTypeOptions = ref<{ label: string; value: string }[]>([]);
 const combineTypeOptions = ref<{ label: string; value: string }[]>([]);
 const conditionTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -49,6 +50,20 @@ onMounted(async () => {
     label: item.key,
     value: item.value,
   }));
+
+  // 规则/规则集
+  const ruleList = await getRuleDropdownList({ lineNo: '' });
+  const newRuleMap: Record<string, string> = {};
+  for (const item of ruleList) {
+    newRuleMap[item.value] = item.key;
+  }
+  ruleMap.value = newRuleMap;
+  const ruleSetList = await getRuleSetDropdownList({ lineNo: '' });
+  const newRuleSetMap: Record<string, string> = {};
+  for (const item of ruleSetList) {
+    newRuleSetMap[item.value] = item.key;
+  }
+  ruleMap.value = { ...ruleMap.value, ...newRuleSetMap };
 
   // 规则类型
   const ruleTypeList = await getRuleTypes();
@@ -167,9 +182,23 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
     },
     { field: 'ruleSetName', title: '名称' },
     { field: 'ruleSetNo', title: '编码' },
-    { field: 'firstNo', title: 'A' },
+    {
+      field: 'firstNo',
+      title: 'A',
+      slots: {
+        default: ({ row }: { row: RuleSetInfo }) =>
+          ruleMap.value[row.firstNo] || row.firstNo,
+      },
+    },
     { field: 'combine', title: '联合', width: 50 },
-    { field: 'secondNo', title: 'B' },
+    {
+      field: 'secondNo',
+      title: 'B',
+      slots: {
+        default: ({ row }: { row: RuleSetInfo }) =>
+          ruleMap.value[row.secondNo] || row.secondNo,
+      },
+    },
     { field: 'cond', title: '条件', width: 50 },
     { field: 'threshold', title: '阈值', width: 80 },
     { field: 'result', title: '结果', width: 80 },

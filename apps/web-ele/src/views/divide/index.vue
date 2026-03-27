@@ -454,7 +454,7 @@ const [EditForm, editFormApi] = useVbenForm({
 
 // 详情
 async function handleInfo(row: DivideInfo) {
-  drawerTitle.value = '场景详情';
+  drawerTitle.value = '分流器详情';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
@@ -666,7 +666,7 @@ function handleAdd() {
 
 // 编辑
 async function handleEdit(row: DivideInfo) {
-  drawerTitle.value = '编辑场景';
+  drawerTitle.value = '编辑分流器';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();

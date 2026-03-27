@@ -1,7 +1,12 @@
 <script lang="ts" setup>
 import type { TabsPaneContext } from 'element-plus';
 
-import type { DeployDiffInfo, DeployDoneInfo, DeployInfo } from '#/api/deploy';
+import type {
+  DeployDiffInfo,
+  DeployDoneInfo,
+  DeployInfo,
+  rollbackVersion,
+} from '#/api/deploy';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -441,7 +446,7 @@ async function handleDeployRollback(deployInfo: DeployInfo) {
   }
 }
 async function handleDeployRollbackDone() {
-  if (rollbackVersion.value <= 0) {
+  if (rollbackVersion.value === '' || !rollbackVersion.value) {
     ElMessage.warning('异常回滚版本！');
   } else {
     const params = {
@@ -453,6 +458,7 @@ async function handleDeployRollbackDone() {
     ElMessage.success(resp);
     rollbackVisible.value = false;
     rollbackData.value = [];
+    rollbackVersion.value = '';
   }
 }
 
@@ -484,9 +490,9 @@ const isDiff = ref(false);
 
 // 回滚
 const rollbackVisible = ref(false);
-const rollbackData = ref<number[]>([]);
+const rollbackData = ref<rollbackVersion[]>([]);
 const rollbackDeployNo = ref('');
-const rollbackVersion = ref(0);
+const rollbackVersion = ref('');
 </script>
 
 <template>

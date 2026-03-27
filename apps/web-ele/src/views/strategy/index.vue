@@ -411,6 +411,7 @@ async function handleInfo(row: StrategyInfo) {
       componentProps: {
         disabled: true,
       },
+      hide: false,
     },
     {
       fieldName: 'model',
@@ -525,6 +526,7 @@ async function handleEdit(row: StrategyInfo) {
       componentProps: {
         disabled: true,
       },
+      hide: false,
     },
     {
       fieldName: 'model',
