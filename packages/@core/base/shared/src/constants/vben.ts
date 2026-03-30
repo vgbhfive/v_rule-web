@@ -6,7 +6,7 @@ export const VGBHFIVE_GITHUB_URL = 'https://github.com/vgbhfive/v_rule-web';
 /**
  * @zh_CN 文档地址
  */
-export const VGBHFIVE_DOC_URL = 'https://blog.vgbhfive.com';
+export const VGBHFIVE_DOC_URL = 'https://truerule.github.io/v_rule-doc/#/';
 
 /**
  * @zh_CN Vben Logo
