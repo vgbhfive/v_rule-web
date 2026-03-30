@@ -49,6 +49,8 @@
 ### 文档
 [Doc](https://truerule.github.io/v_rule-doc/#/)
 
+ > 默认用户名/密码 -> admin/v_rule
+
 ### 联系
 vgbhfive@foxmail.com
 
