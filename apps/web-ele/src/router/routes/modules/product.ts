@@ -25,6 +25,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: $t('page.product.dynamicLimit'),
+        },
+        sign: 'product_dynamic_limit_manage',
+        name: 'DynamicLimit',
+        path: '/product/dynamic_limit',
+        component: () => import('#/views/product/dynamic_limit/index.vue'),
+      },
+      {
+        meta: {
           title: $t('page.product.interest'),
         },
         sign: 'product_interest_manage',
@@ -40,6 +49,15 @@ const routes: RouteRecordRaw[] = [
         name: 'Period',
         path: '/product/period',
         component: () => import('#/views/product/period/index.vue'),
+      },
+      {
+        meta: {
+          title: $t('page.product.dynamicPeriod'),
+        },
+        sign: 'product_dynamic_period_manage',
+        name: 'DynamicPeriod',
+        path: '/product/dynamic_period',
+        component: () => import('#/views/product/dynamic_period/index.vue'),
       },
       {
         meta: {

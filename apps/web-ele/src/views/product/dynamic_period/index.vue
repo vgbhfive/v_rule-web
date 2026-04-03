@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { LimitInfo } from '#/api/product';
+import type { DynamicPeriodInfo, DynamicPeriodParams } from '#/api/product';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -14,10 +14,10 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDataSourceDropdownList } from '#/api/data';
 import { getInterestUnitTypes, getValueTypes } from '#/api/enums';
 import {
-  createLimit,
-  getLimitList,
-  updateLimit,
-  updateProductLimitValid,
+  createDynamicPeriod,
+  getDynamicPeriodList,
+  updateDynamicPeriod,
+  updateDynamicPeriodValid,
 } from '#/api/product';
 import { getLineDropdownList } from '#/api/system';
 
@@ -140,44 +140,52 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
-    show: hasAccessByCodes(['product_limit_manage']),
+    show: hasAccessByCodes(['product_dynamic_period_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
 
 // 表单提交处理
-async function onSubmit(values: LimitParams) {
+async function onSubmit(values: DynamicPeriodParams) {
   await gridApi.reload({ ...values });
 }
 
 // 表格配置
-const gridOptions: VxeGridProps<LimitInfo> = {
+const gridOptions: VxeGridProps<DynamicPeriodInfo> = {
   columns: [
     { type: 'seq', title: '序号', width: 50 },
     {
       field: 'lineNo',
       title: '业务线',
       slots: {
-        default: ({ row }: { row: LimitInfo }) =>
+        default: ({ row }: { row: DynamicPeriodInfo }) =>
           lineMap.value[row.lineNo] || row.lineNo,
       },
     },
     { field: 'productName', title: '名称' },
     { field: 'productNo', title: '编码' },
     {
-      field: 'value',
-      title: '值',
+      field: 'startPeriod',
+      title: '起始值',
       slots: {
-        default: ({ row }: { row: LimitInfo }) =>
-          dataSourceMap.value[row.value] || row.value,
+        default: ({ row }: { row: DynamicPeriodInfo }) =>
+          dataSourceMap.value[row.startPeriod] || row.startPeriod,
       },
     },
     {
-      field: 'valueType',
-      title: '值类型',
+      field: 'endPeriod',
+      title: '截止值',
       slots: {
-        default: ({ row }: { row: LimitInfo }) =>
-          allValueMap.value[row.valueType] || row.valueType,
+        default: ({ row }: { row: DynamicPeriodInfo }) =>
+          dataSourceMap.value[row.endPeriod] || row.endPeriod,
+      },
+    },
+    {
+      field: 'periodStep',
+      title: '步长',
+      slots: {
+        default: ({ row }: { row: DynamicPeriodInfo }) =>
+          dataSourceMap.value[row.periodStep] || row.periodStep,
       },
     },
     { field: 'remark', title: '备注', width: 130 },
@@ -194,17 +202,17 @@ const gridOptions: VxeGridProps<LimitInfo> = {
       title: '操作',
       width: 200,
       slots: {
-        default: ({ row: limitInfo }: { row: LimitInfo }) => {
+        default: ({ row: dynamicPeriodInfo }: { row: DynamicPeriodInfo }) => {
           const buttons = [];
 
-          if (hasAccessByCodes(['product_limit_manage_update'])) {
+          if (hasAccessByCodes(['product_dynamic_period_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
                   type: 'primary',
                   size: 'small',
-                  onClick: () => handleEdit(limitInfo),
+                  onClick: () => handleEdit(dynamicPeriodInfo),
                 },
                 { default: () => '编辑' },
               ),
@@ -217,21 +225,21 @@ const gridOptions: VxeGridProps<LimitInfo> = {
               {
                 type: 'info',
                 size: 'small',
-                onClick: () => handleInfo(limitInfo),
+                onClick: () => handleInfo(dynamicPeriodInfo),
               },
               { default: () => '详情' },
             ),
           );
 
-          if (hasAccessByCodes(['product_limit_manage_valid'])) {
-            if (limitInfo.isValid === 0) {
+          if (hasAccessByCodes(['product_dynamic_period_manage_valid'])) {
+            if (dynamicPeriodInfo.isValid === 0) {
               buttons.push(
                 h(
                   ElButton,
                   {
                     type: 'success',
                     size: 'small',
-                    onClick: () => handleValid(limitInfo),
+                    onClick: () => handleValid(dynamicPeriodInfo),
                   },
                   { default: () => '生效' },
                 ),
@@ -243,7 +251,7 @@ const gridOptions: VxeGridProps<LimitInfo> = {
                   {
                     type: 'warning',
                     size: 'small',
-                    onClick: () => handleInvalid(limitInfo),
+                    onClick: () => handleInvalid(dynamicPeriodInfo),
                   },
                   { default: () => '失效' },
                 ),
@@ -273,7 +281,7 @@ const gridOptions: VxeGridProps<LimitInfo> = {
           currPage: page.currentPage,
           limit: page.pageSize,
         };
-        return await getLimitList(params);
+        return await getDynamicPeriodList(params);
       },
     },
   },
@@ -282,7 +290,7 @@ const gridOptions: VxeGridProps<LimitInfo> = {
   },
 };
 
-const gridEvents: VxeGridListeners<LimitInfo> = {
+const gridEvents: VxeGridListeners<DynamicPeriodInfo> = {
   // 可以添加表格事件监听
 };
 
@@ -290,9 +298,11 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditing = ref<LimitInfo | null>(null);
+const currentEditing = ref<DynamicPeriodInfo | null>(null);
 const drawerTitle = ref('');
-const preValueType = ref('');
+const preStartValueType = ref('');
+const preEndValueType = ref('');
+const preStepValueType = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
 const dataSourceOptions = ref<{ label: string; value: string }[]>([]);
@@ -323,20 +333,20 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入利率产品名称',
+        placeholder: '请输入动态账期产品名称',
       },
       fieldName: 'productName',
-      label: '利率产品名称',
+      label: '动态账期产品名称',
       rules: 'required',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入利率产品编码',
+        placeholder: '请输入动态账期产品编码',
         disabled: true,
       },
       fieldName: 'productNo',
-      label: '利率产品编码',
+      label: '动态账期产品编码',
       rules: 'required',
     },
     {
@@ -346,8 +356,8 @@ const [EditForm, editFormApi] = useVbenForm({
         placeholder: '请选择值类型',
         disabled: true,
       },
-      fieldName: 'valueType',
-      label: '值类型',
+      fieldName: 'startValueType',
+      label: '起始值类型',
       rules: 'required',
     },
     {
@@ -356,8 +366,8 @@ const [EditForm, editFormApi] = useVbenForm({
         placeholder: '请输入值',
         disabled: true,
       },
-      fieldName: 'valueFixed',
-      label: '值',
+      fieldName: 'startValueFixed',
+      label: '起始值',
       rules: 'required',
     },
     {
@@ -367,8 +377,72 @@ const [EditForm, editFormApi] = useVbenForm({
         placeholder: '请输入值',
         disabled: true,
       },
-      fieldName: 'valueDataSource',
-      label: '值',
+      fieldName: 'startValueDataSource',
+      label: '起始值',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: allValueOptions,
+        placeholder: '请选择值类型',
+        disabled: true,
+      },
+      fieldName: 'endValueType',
+      label: '截止值类型',
+      rules: 'required',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入值',
+        disabled: true,
+      },
+      fieldName: 'endValueFixed',
+      label: '截止值',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: dataSourceOptions,
+        placeholder: '请输入值',
+        disabled: true,
+      },
+      fieldName: 'endValueDataSource',
+      label: '截止值',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: allValueOptions,
+        placeholder: '请选择值类型',
+        disabled: true,
+      },
+      fieldName: 'stepValueType',
+      label: '步长值类型',
+      rules: 'required',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入值',
+        disabled: true,
+      },
+      fieldName: 'stepValueFixed',
+      label: '步长值',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: dataSourceOptions,
+        placeholder: '请输入值',
+        disabled: true,
+      },
+      fieldName: 'stepValueDataSource',
+      label: '步长值',
       rules: 'required',
     },
     {
@@ -415,18 +489,29 @@ const [EditForm, editFormApi] = useVbenForm({
 });
 
 // 详情
-async function handleInfo(row: LimitInfo) {
-  drawerTitle.value = '额度产品详情';
+async function handleInfo(row: DynamicPeriodInfo) {
+  drawerTitle.value = '动态账期产品详情';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
   const values = {
     ...row,
-    valueFixed: row.value,
-    valueDataSource: row.value,
+    startValueType: row.startPeriodType,
+    startValueFixed: row.startPeriod,
+    startValueDataSource: row.startPeriod,
+    endValueType: row.endPeriodType,
+    endValueFixed: row.endPeriod,
+    endValueDataSource: row.endPeriod,
+    stepValueType: row.periodStepType,
+    stepValueFixed: row.periodStep,
+    stepValueDataSource: row.periodStep,
   };
-  if (values.valueType === 'dataSource') {
+  if (
+    values.startPeriodType === 'dataSource' ||
+    values.endPeriodType === 'dataSource' ||
+    values.periodStepType === 'dataSource'
+  ) {
     const data = {
       lineNo: values.lineNo,
     };
@@ -460,24 +545,65 @@ async function handleInfo(row: LimitInfo) {
       },
     },
     {
-      fieldName: 'valueType',
+      fieldName: 'startValueType',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'valueFixed',
+      fieldName: 'startValueFixed',
       componentProps: {
         disabled: true,
       },
-      hide: !(row.valueType === 'fixed'),
+      hide: !(row.startPeriodType === 'fixed'),
     },
     {
-      fieldName: 'valueDataSource',
+      fieldName: 'startValueDataSource',
       componentProps: {
         disabled: true,
       },
-      hide: !(row.valueType === 'dataSource'),
+      hide: !(row.startPeriodType === 'dataSource'),
+    },
+    {
+      fieldName: 'endValueType',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'endValueFixed',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.endPeriodType === 'fixed'),
+    },
+    {
+      fieldName: 'endValueDataSource',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.endPeriodType === 'dataSource'),
+    },
+
+    {
+      fieldName: 'stepValueType',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'stepValueFixed',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.periodStepType === 'fixed'),
+    },
+    {
+      fieldName: 'stepValueDataSource',
+      componentProps: {
+        disabled: true,
+      },
+      hide: !(row.periodStepType === 'dataSource'),
     },
     {
       fieldName: 'remark',
@@ -499,7 +625,7 @@ async function handleInfo(row: LimitInfo) {
 
 // 新增
 function handleAdd() {
-  drawerTitle.value = '新增额度产品';
+  drawerTitle.value = '新增动态账期产品';
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 设置部分字段可编辑
@@ -524,20 +650,60 @@ function handleAdd() {
       hide: true,
     },
     {
-      fieldName: 'valueType',
+      fieldName: 'startValueType',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'valueFixed',
+      fieldName: 'startValueFixed',
       componentProps: {
         disabled: false,
       },
       hide: false,
     },
     {
-      fieldName: 'valueDataSource',
+      fieldName: 'startValueDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: true,
+    },
+    {
+      fieldName: 'endValueType',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'endValueFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: false,
+    },
+    {
+      fieldName: 'endValueDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: true,
+    },
+    {
+      fieldName: 'stepValueType',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'stepValueFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: false,
+    },
+    {
+      fieldName: 'stepValueDataSource',
       componentProps: {
         disabled: false,
       },
@@ -564,18 +730,29 @@ function handleAdd() {
 }
 
 // 编辑
-async function handleEdit(row: LimitInfo) {
-  drawerTitle.value = '编辑额度产品';
+async function handleEdit(row: DynamicPeriodInfo) {
+  drawerTitle.value = '编辑动态账期产品';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
   const values = {
     ...row,
-    valueFixed: row.value,
-    valueDataSource: row.value,
+    startValueType: row.startPeriodType,
+    startValueFixed: row.startPeriod,
+    startValueDataSource: row.startPeriod,
+    endValueType: row.endPeriodType,
+    endValueFixed: row.endPeriod,
+    endValueDataSource: row.endPeriod,
+    stepValueType: row.periodStepType,
+    stepValueFixed: row.periodStep,
+    stepValueDataSource: row.periodStep,
   };
-  if (values.valueType === 'dataSource') {
+  if (
+    values.startPeriodType === 'dataSource' ||
+    values.endPeriodType === 'dataSource' ||
+    values.periodStepType === 'dataSource'
+  ) {
     const data = {
       lineNo: values.lineNo,
     };
@@ -607,27 +784,68 @@ async function handleEdit(row: LimitInfo) {
       componentProps: {
         disabled: true,
       },
-      hide: true,
+      hide: false,
     },
     {
-      fieldName: 'valueType',
+      fieldName: 'startValueType',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'valueFixed',
+      fieldName: 'startValueFixed',
       componentProps: {
         disabled: false,
       },
-      hide: !(row.valueType === 'fixed'),
+      hide: !(row.startPeriodType === 'fixed'),
     },
     {
-      fieldName: 'valueDataSource',
+      fieldName: 'startValueDataSource',
       componentProps: {
         disabled: false,
       },
-      hide: !(row.valueType === 'dataSource'),
+      hide: !(row.startPeriodType === 'dataSource'),
+    },
+    {
+      fieldName: 'endValueType',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'endValueFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.endPeriodType === 'fixed'),
+    },
+    {
+      fieldName: 'endValueDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.endPeriodType === 'dataSource'),
+    },
+
+    {
+      fieldName: 'stepValueType',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'stepValueFixed',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.periodStepType === 'fixed'),
+    },
+    {
+      fieldName: 'stepValueDataSource',
+      componentProps: {
+        disabled: false,
+      },
+      hide: !(row.periodStepType === 'dataSource'),
     },
     {
       fieldName: 'remark',
@@ -646,15 +864,17 @@ async function handleEdit(row: LimitInfo) {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = false;
   isEdit.value = true;
-  preValueType.value = row.valueType;
+  preStartValueType.value = row.startPeriodType;
+  preEndValueType.value = row.endPeriodType;
+  preStepValueType.value = row.periodStepType;
   editDrawerVisible.value = true;
 }
 
 // 生效
-async function handleValid(row: LimitInfo) {
+async function handleValid(row: DynamicPeriodInfo) {
   try {
     const data = { id: row.id, isValid: 1 };
-    const resp = await updateProductLimitValid(data);
+    const resp = await updateDynamicPeriodValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -665,10 +885,10 @@ async function handleValid(row: LimitInfo) {
 }
 
 // 失效
-async function handleInvalid(row: LimitInfo) {
+async function handleInvalid(row: DynamicPeriodInfo) {
   try {
     const data = { id: row.id, isValid: 0 };
-    const resp = await updateProductLimitValid(data);
+    const resp = await updateDynamicPeriodValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -682,51 +902,52 @@ async function handleInvalid(row: LimitInfo) {
 async function handleValuesChange(values: any) {
   if (
     (isAdd.value || isEdit.value) &&
-    values.valueType &&
-    values.valueType !== preValueType.value
+    values.startValueType &&
+    values.startValueType !== preStartValueType.value
   ) {
+    // 起始值
     if (
-      values.valueType === 'fixed' &&
-      values.valueType !== preValueType.value
+      values.startValueType === 'fixed' &&
+      values.startValueType !== preStartValueType.value
     ) {
       editFormApi.updateSchema([
         {
-          fieldName: 'valueFixed',
+          fieldName: 'startValueFixed',
           componentProps: {
             disabled: false,
           },
           hide: false,
         },
         {
-          fieldName: 'valueDataSource',
+          fieldName: 'startValueDataSource',
           componentProps: {
             disabled: false,
           },
           hide: true,
         },
       ]);
-      editFormApi.setFieldValue('valueFixed', '');
+      editFormApi.setFieldValue('startValueFixed', '');
     } else if (
-      values.valueType === 'dataSource' &&
-      values.valueType !== preValueType.value
+      values.startValueType === 'dataSource' &&
+      values.startValueType !== preStartValueType.value
     ) {
       editFormApi.updateSchema([
         {
-          fieldName: 'valueFixed',
+          fieldName: 'startValueFixed',
           componentProps: {
             disabled: false,
           },
           hide: true,
         },
         {
-          fieldName: 'valueDataSource',
+          fieldName: 'startValueDataSource',
           componentProps: {
             disabled: false,
           },
           hide: false,
         },
       ]);
-      editFormApi.setFieldValue('valueDataSource', '');
+      editFormApi.setFieldValue('startValueDataSource', '');
       if (values.lineNo) {
         const data = {
           lineNo: values.lineNo,
@@ -740,7 +961,135 @@ async function handleValuesChange(values: any) {
         dataSourceOptions.value = [];
       }
     }
-    preValueType.value = values.valueType;
+    preStartValueType.value = values.startValueType;
+  }
+
+  // 截止值
+  if (
+    (isAdd.value || isEdit.value) &&
+    values.endValueType &&
+    values.endValueType !== preEndValueType.value
+  ) {
+    if (
+      values.endValueType === 'fixed' &&
+      values.endValueType !== preEndValueType.value
+    ) {
+      editFormApi.updateSchema([
+        {
+          fieldName: 'endValueFixed',
+          componentProps: {
+            disabled: false,
+          },
+          hide: false,
+        },
+        {
+          fieldName: 'endValueDataSource',
+          componentProps: {
+            disabled: false,
+          },
+          hide: true,
+        },
+      ]);
+      editFormApi.setFieldValue('endValueFixed', '');
+    } else if (
+      values.endValueType === 'dataSource' &&
+      values.endValueType !== preEndValueType.value
+    ) {
+      editFormApi.updateSchema([
+        {
+          fieldName: 'endValueFixed',
+          componentProps: {
+            disabled: false,
+          },
+          hide: true,
+        },
+        {
+          fieldName: 'endValueDataSource',
+          componentProps: {
+            disabled: false,
+          },
+          hide: false,
+        },
+      ]);
+      editFormApi.setFieldValue('endValueDataSource', '');
+      if (values.lineNo) {
+        const data = {
+          lineNo: values.lineNo,
+        };
+        const dataSourceList = await getDataSourceDropdownList(data);
+        dataSourceOptions.value = dataSourceList.map((item) => ({
+          label: item.key,
+          value: item.value,
+        }));
+      } else {
+        dataSourceOptions.value = [];
+      }
+    }
+    preEndValueType.value = values.endValueType;
+  }
+
+  // 步进值类型
+  if (
+    (isAdd.value || isEdit.value) &&
+    values.stepValueType &&
+    values.stepValueType !== preStepValueType.value
+  ) {
+    if (
+      values.stepValueType === 'fixed' &&
+      values.stepValueType !== preStepValueType.value
+    ) {
+      editFormApi.updateSchema([
+        {
+          fieldName: 'stepValueFixed',
+          componentProps: {
+            disabled: false,
+          },
+          hide: false,
+        },
+        {
+          fieldName: 'stepValueDataSource',
+          componentProps: {
+            disabled: false,
+          },
+          hide: true,
+        },
+      ]);
+      editFormApi.setFieldValue('stepValueFixed', '');
+    } else if (
+      values.stepValueType === 'dataSource' &&
+      values.stepValueType !== preStepValueType.value
+    ) {
+      editFormApi.updateSchema([
+        {
+          fieldName: 'stepValueFixed',
+          componentProps: {
+            disabled: false,
+          },
+          hide: true,
+        },
+        {
+          fieldName: 'stepValueDataSource',
+          componentProps: {
+            disabled: false,
+          },
+          hide: false,
+        },
+      ]);
+      editFormApi.setFieldValue('stepValueDataSource', '');
+      if (values.lineNo) {
+        const data = {
+          lineNo: values.lineNo,
+        };
+        const dataSourceList = await getDataSourceDropdownList(data);
+        dataSourceOptions.value = dataSourceList.map((item) => ({
+          label: item.key,
+          value: item.value,
+        }));
+      } else {
+        dataSourceOptions.value = [];
+      }
+    }
+    preStepValueType.value = values.stepValueType;
   }
 }
 
@@ -751,17 +1100,26 @@ async function handleSaveEdit(values: any) {
       const insertData = {
         lineNo: values.lineNo,
         productName: values.productName,
-        type: 'limit',
-        valueType: values.valueType,
-        value:
-          values.valueType === 'fixed'
-            ? values.valueFixed
-            : values.valueDataSource,
-        unit: values.unit,
+        type: 'dynamic_period',
+        startPeriodType: values.startValueType,
+        startPeriod:
+          values.startValueType === 'fixed'
+            ? values.startValueFixed
+            : values.startValueDataSource,
+        endPeriodType: values.endValueType,
+        endPeriod:
+          values.endValueType === 'fixed'
+            ? values.endValueFixed
+            : values.endValueDataSource,
+        periodStepType: values.stepValueType,
+        periodStep:
+          values.stepValueType === 'fixed'
+            ? values.stepValueFixed
+            : values.stepValueDataSource,
         remark: values.remark,
         isValid: values.isValid,
       };
-      const resp = await createLimit(insertData);
+      const resp = await createDynamicPeriod(insertData);
       ElMessage.success(resp);
     }
 
@@ -771,18 +1129,27 @@ async function handleSaveEdit(values: any) {
         lineNo: values.lineNo,
         productName: values.productName,
         productNo: currentEditing.value?.productNo,
-        type: 'limit',
-        valueType: values.valueType,
-        value:
-          values.valueType === 'fixed'
-            ? values.valueFixed
-            : values.valueDataSource,
-        unit: values.unit,
+        type: 'dynamic_period',
+        startPeriodType: values.startValueType,
+        startPeriod:
+          values.startValueType === 'fixed'
+            ? values.startValueFixed
+            : values.startValueDataSource,
+        endPeriodType: values.endValueType,
+        endPeriod:
+          values.endValueType === 'fixed'
+            ? values.endValueFixed
+            : values.endValueDataSource,
+        periodStepType: values.stepValueType,
+        periodStep:
+          values.stepValueType === 'fixed'
+            ? values.stepValueFixed
+            : values.stepValueDataSource,
         remark: values.remark,
         version: currentEditing.value?.version,
         isValid: values.isValid,
       };
-      const resp = await updateLimit(updateData);
+      const resp = await updateDynamicPeriod(updateData);
       ElMessage.success(resp);
     }
 
@@ -796,8 +1163,8 @@ async function handleSaveEdit(values: any) {
     await editFormApi.resetForm();
     currentEditing.value = null;
   } catch (error) {
-    ElMessage.error('额度操作失败');
-    console.error('额度操作失败:', error);
+    ElMessage.error('动态账期操作失败');
+    console.error('动态账期操作失败:', error);
   }
 }
 
@@ -809,8 +1176,8 @@ async function handleResetEdit() {
   if (isEdit.value) {
     const data = {
       ...currentEditing.value,
-      valueFixed: currentEditing.value?.value,
-      valueDataSource: currentEditing.value?.value,
+      startLimitFixed: currentEditing.value?.startLimit,
+      startLimitDataSource: currentEditing.value?.startLimit,
     };
     editFormApi.setValues(data || {});
   }
@@ -833,14 +1200,14 @@ function handleDrawerClose(done: () => void) {
 </script>
 
 <template>
-  <Page description="产品额度管理">
+  <Page description="产品动态账期管理">
     <div>
       <div class="w-full">
         <QueryForm />
       </div>
       <div
         class="mb-4 mt-4 flex justify-start pl-[15px]"
-        v-if="hasAccessByCodes(['product_limit_manage_create'])"
+        v-if="hasAccessByCodes(['product_dynamic_period_manage_create'])"
       >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
@@ -854,7 +1221,7 @@ function handleDrawerClose(done: () => void) {
       </div>
     </div>
 
-    <!-- 新增/编辑场景侧边弹窗 -->
+    <!-- 新增/编辑动态账期侧边弹窗 -->
     <ElDrawer
       v-model="editDrawerVisible"
       direction="rtl"

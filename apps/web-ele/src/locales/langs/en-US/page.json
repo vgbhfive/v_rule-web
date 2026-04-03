@@ -32,7 +32,9 @@
     "custom": "Custom Product",
     "interest": "Interest Product",
     "period": "Period Product",
-    "limit": "Limit Product"
+    "limit": "Limit Product",
+    "dynamicLimit": "Dynamic Limit Product",
+    "dynamicPeriod": "Dynamic Period Product"
   },
   "divide": {
     "title": "Divide Management",
