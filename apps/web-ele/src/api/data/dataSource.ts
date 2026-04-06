@@ -25,6 +25,13 @@ export interface DataSourceParams {
   isValid?: number;
 }
 
+export interface DataSourceFunction {
+  type: string;
+  name: string;
+  params: string;
+  trial: string;
+}
+
 /**
  * 获取数据源列表
  */

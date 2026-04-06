@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { DataSourceInfo, DataSourceParams } from '#/api/data';
+import type { DataSourceInfo, DataSourceParams, DataSourceFunction } from '#/api/data';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -20,6 +20,7 @@ import {
 } from '#/api/data';
 import { getFieldTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
+import DataSourceFunctionDialog from './dataSourceFunctionDialog.vue';
 
 const { hasAccessByCodes } = useAccess();
 
@@ -318,6 +319,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditing = ref<DataSourceInfo | null>(null);
 const preLineNo = ref('');
+const preFunction = ref(0);
 const drawerTitle = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
@@ -425,12 +427,34 @@ const [EditForm, editFormApi] = useVbenForm({
       label: '状态',
       rules: 'required',
     },
+    {
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        filterOption: true,
+        options: [
+          {
+            label: '是',
+            value: 1,
+          },
+          {
+            label: '否',
+            value: 0,
+          },
+        ],
+        placeholder: '是否为数据源函数',
+      },
+      fieldName: 'function',
+      label: '数据源函数',
+      rules: 'required',
+      defaultValue: 0,
+    },
   ],
   showDefaultActions: true,
   wrapperClass: 'grid-cols-1',
 });
 
-// 场景详情
+// 详情
 function handleInfo(row: DataSourceInfo) {
   drawerTitle.value = '数据源详情';
   currentEditing.value = row;
@@ -494,7 +518,7 @@ function handleInfo(row: DataSourceInfo) {
   editDrawerVisible.value = true;
 }
 
-// 新增场景
+// 新增
 function handleAdd() {
   drawerTitle.value = '新增数据源';
   // 重置表单以清除之前的校验状态
@@ -558,7 +582,7 @@ function handleAdd() {
   editDrawerVisible.value = true;
 }
 
-// 编辑场景
+// 编辑
 async function handleEdit(row: DataSourceInfo) {
   drawerTitle.value = '编辑数据源';
   currentEditing.value = row;
@@ -625,7 +649,7 @@ async function handleEdit(row: DataSourceInfo) {
   editDrawerVisible.value = true;
 }
 
-// 生效场景
+// 生效
 async function handleValid(row: DataSourceInfo) {
   try {
     const data = { id: row.id, isValid: 1 };
@@ -639,7 +663,7 @@ async function handleValid(row: DataSourceInfo) {
   }
 }
 
-// 失效场景
+// 失效
 async function handleInvalid(row: DataSourceInfo) {
   try {
     const data = { id: row.id, isValid: 0 };
@@ -732,6 +756,10 @@ async function handleValuesChangeEdit(values: any) {
     }
     preLineNo.value = values.lineNo;
   }
+  if (values.function !== preFunction.value) {
+    functionVisible.value = values.function !== 0;
+    preFunction.value = values.function;
+  }
 }
 
 // 取消编辑
@@ -745,6 +773,13 @@ function handleCancelEdit() {
 function handleDrawerClose(done: () => void) {
   handleCancelEdit();
   done();
+}
+
+const functionVisible = ref(false);
+const canEdit = ref(false);
+const DataSourceFunctionInfo = ref<DataSourceFunction>({});
+function handleSaveFunction(values: DataSourceFunction) {
+  console.log(values);
 }
 </script>
 
@@ -785,5 +820,13 @@ function handleDrawerClose(done: () => void) {
 
       <EditForm @submit="handleSaveEdit" @reset="handleCancelEdit" />
     </ElDrawer>
-  </Page>
+
+    <!-- 数据源函数 -->
+    <DataSourceFunctionDialog
+      v-model:visible="functionVisible"  
+      :data="DataSourceFunctionInfo"
+      :can-edit="canEdit"
+      @submit="handleSaveFunction"
+    />
+   </Page>
 </template>
