@@ -74,6 +74,16 @@ export async function getRuleTypes() {
 }
 
 /**
+ * 获取规则降级策略类型下拉列表
+ * @returns
+ */
+export async function getRuleDemotionStrategyTypes() {
+  return requestClient.get<{ remark: string; type: number }[]>(
+    '/enum/ruleDemotionStrategyType',
+  );
+}
+
+/**
  * 获取联合条件下拉列表
  * @returns
  */

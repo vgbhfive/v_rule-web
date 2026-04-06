@@ -13,7 +13,12 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDataSourceDropdownList } from '#/api/data';
-import { getConditionTypes, getResultTypes, getValueTypes } from '#/api/enums';
+import {
+  getConditionTypes,
+  getResultTypes,
+  getRuleDemotionStrategyTypes,
+  getValueTypes,
+} from '#/api/enums';
 import {
   createRule,
   getRuleList,
@@ -29,6 +34,8 @@ const dataSourceMap = ref<Record<string, string>>({});
 const allValueMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
 const conditionTypeOptions = ref<{ label: string; value: string }[]>([]);
+const demotionStrategyTypeOptions = ref<{ label: string; value: number }[]>([]);
+const demotionStrategyValueMap = ref<Record<number, string>>({});
 const resultOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
@@ -65,6 +72,18 @@ onMounted(async () => {
     label: item.name,
     value: item.value,
   }));
+
+  // 规则降级策略类型
+  const demotionStrategyList = await getRuleDemotionStrategyTypes();
+  demotionStrategyTypeOptions.value = demotionStrategyList.map((item) => ({
+    label: item.remark,
+    value: item.type,
+  }));
+  const newDemotionStrategyValueMap: Record<number, string> = {};
+  for (const item of demotionStrategyList) {
+    newDemotionStrategyValueMap[item.type] = item.remark;
+  }
+  demotionStrategyValueMap.value = newDemotionStrategyValueMap;
 
   // 结果类型
   const resultList = await getResultTypes();
@@ -191,6 +210,16 @@ const gridOptions: VxeGridProps<RuleInfo> = {
       },
     },
     { field: 'result', title: '结果', width: 80 },
+    {
+      field: 'demotionStrategy',
+      title: '降级策略',
+      width: 100,
+      slots: {
+        default: ({ row }: { row: RuleInfo }) =>
+          demotionStrategyValueMap.value[row.demotionStrategy] ||
+          row.demotionStrategy,
+      },
+    },
     {
       field: 'isValid',
       title: '状态',
@@ -403,6 +432,17 @@ const [EditForm, editFormApi] = useVbenForm({
       },
       fieldName: 'result',
       label: '结果',
+      rules: 'required',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: demotionStrategyTypeOptions,
+        placeholder: '请选择异常降级策略',
+        disabled: false,
+      },
+      fieldName: 'demotionStrategy',
+      label: '异常降级策略',
       rules: 'required',
     },
     {
@@ -813,6 +853,7 @@ async function handleSaveEdit(values: any) {
         threshold: values.thresholdFixed,
         thresholdType: 'fixed',
         result: values.result,
+        demotionStrategy: values.demotionStrategy,
         isValid: values.isValid,
       };
 
@@ -828,6 +869,7 @@ async function handleSaveEdit(values: any) {
         threshold: values.thresholdDataSource,
         thresholdType: 'dataSource',
         result: values.result,
+        demotionStrategy: values.demotionStrategy,
         isValid: values.isValid,
       };
 
@@ -846,6 +888,7 @@ async function handleSaveEdit(values: any) {
         threshold: values.thresholdFixed,
         thresholdType: 'fixed',
         result: values.result,
+        demotionStrategy: values.demotionStrategy,
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
@@ -865,6 +908,7 @@ async function handleSaveEdit(values: any) {
         threshold: values.thresholdDataSource,
         thresholdType: 'dataSource',
         result: values.result,
+        demotionStrategy: values.demotionStrategy,
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,

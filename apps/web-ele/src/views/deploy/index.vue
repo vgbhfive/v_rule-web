@@ -366,6 +366,8 @@ async function handleDeploy(deployInfo: DeployInfo) {
     } else if (res?.deployStatus === 1) {
       ElMessage.info('首次上线，无 DIFF 展示');
       diffVisible.value = false;
+      currentDeployInfo.value = deployInfo;
+      handleDeploySubmit('first deploy!');
     } else {
       currentDeployInfo.value = deployInfo;
       isDiff.value = false;

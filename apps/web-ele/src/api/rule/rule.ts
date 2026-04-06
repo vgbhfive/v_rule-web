@@ -12,6 +12,7 @@ export interface RuleInfo {
   threshold: string;
   thresholdType: string;
   result: string;
+  demotionStrategy: number;
   version: number;
   isValid: number;
   deleteAt: string;
