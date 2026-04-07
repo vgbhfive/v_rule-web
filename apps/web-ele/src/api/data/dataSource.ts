@@ -14,6 +14,8 @@ export interface DataSourceInfo {
   version?: number;
   isValid: number;
   createAt: string;
+  function: number;
+  dataSourceFunction: DataSourceFunction;
 }
 
 export interface DataSourceParams {
@@ -27,7 +29,7 @@ export interface DataSourceParams {
 
 export interface DataSourceFunction {
   type: string;
-  name: string;
+  func: string;
   params: string;
   trial: string;
 }
@@ -64,6 +66,24 @@ export async function updateDataSourceValid(params: Recordable<any>) {
   return requestClient.post(`/dataSource/valid`, params);
 }
 
+/**
+ * 获取数据源详情
+ * @param id 
+ * @returns 
+ */
+export async function getDataSouceDetail(id: number) {
+  return requestClient.post<DataSourceInfo>(`/dataSource/detail/${id}`);
+} 
+
+/**
+ * 数据源函数试算
+ * @returns 
+ */
+export async function dataSourceTrial(params: Recordable<any>) {
+  return requestClient.post<any>(`dataSource/trial`, params);
+}
+
+/**
 /**
  * 数据源下拉
  */
