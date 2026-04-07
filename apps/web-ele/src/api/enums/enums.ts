@@ -18,6 +18,16 @@ export async function getFieldTypes() {
 }
 
 /**
+ * 获取数据源函数类型下拉列表
+ * @returns
+ */
+export async function getFieldFuncTypes(fieldType: string) {
+  return requestClient.get<{ function: string; name: string }[]>(
+    `/enum/fieldFuncType?type=${fieldType}`,
+  );
+}
+
+/**
  * 获取数据源分类类型
  * @returns
  */

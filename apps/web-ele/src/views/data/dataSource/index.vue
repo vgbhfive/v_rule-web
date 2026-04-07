@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { DataSourceInfo, DataSourceParams, DataSourceFunction } from '#/api/data';
+import type {
+  DataSourceFunction,
+  DataSourceInfo,
+  DataSourceParams,
+} from '#/api/data';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -20,6 +24,7 @@ import {
 } from '#/api/data';
 import { getFieldTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
+
 import DataSourceFunctionDialog from './dataSourceFunctionDialog.vue';
 
 const { hasAccessByCodes } = useAccess();
@@ -758,6 +763,7 @@ async function handleValuesChangeEdit(values: any) {
   }
   if (values.function !== preFunction.value) {
     functionVisible.value = values.function !== 0;
+    DataSourceFunctionInfo.value.type = values.type;
     preFunction.value = values.function;
   }
 }
@@ -823,10 +829,10 @@ function handleSaveFunction(values: DataSourceFunction) {
 
     <!-- 数据源函数 -->
     <DataSourceFunctionDialog
-      v-model:visible="functionVisible"  
+      v-model:visible="functionVisible"
       :data="DataSourceFunctionInfo"
       :can-edit="canEdit"
       @submit="handleSaveFunction"
     />
-   </Page>
+  </Page>
 </template>
