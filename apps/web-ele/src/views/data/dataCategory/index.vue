@@ -29,6 +29,7 @@ import { getLineDropdownList } from '#/api/system';
 
 import HttpDialog from './HttpDialog.vue';
 import PythonDialog from './PythonDialog.vue';
+import ScoreCardDialog from './ScoreCardDialog.vue';
 
 const { hasAccessByCodes } = useAccess();
 
@@ -748,6 +749,14 @@ async function handleValueChange(values: any) {
     // HTTP
     httpVisible.value = true;
   }
+  if (
+    values.categoryType &&
+    values.categoryType === 3 &&
+    values.categoryType !== preCategoryType.value
+  ) {
+    // ScoreCard
+    scoreCardVisible.value = true;
+  }
   if (values.lineNo && preLineNo.value !== values.lineNo) {
     // 数据源
     const queryParams = { lineNo: values.lineNo };
@@ -793,6 +802,7 @@ function handleDrawerClose(done: () => void) {
 
 const pythonVisible = ref(false);
 const httpVisible = ref(false);
+const scoreCardVisible = ref(false);
 const detailData = ref<DataCategoryDetail[]>([]);
 const detailOtherData = ref<DataCategoryDetail[]>([]);
 
@@ -826,6 +836,11 @@ async function handleTrial() {
 // HTTP数据源分类提交
 async function handleHttpConfirm() {
   httpVisible.value = false;
+}
+
+// ScoreCard数据源分类提交
+async function handleScoreCardConfirm() {
+  scoreCardVisible.value = false;
 }
 </script>
 
@@ -890,6 +905,19 @@ async function handleHttpConfirm() {
       @update:data="detailData = $event"
       @update:other-data="detailOtherData = $event"
       @confirm="handleHttpConfirm"
+      @trial="handleTrial"
+    />
+
+    <!-- 评分卡数据源分类 -->
+    <ScoreCardDialog
+      v-model="scoreCardVisible"
+      :data="detailData"
+      :other-data="detailOtherData"
+      :data-source-list="allDataSourceOptions"
+      :can-edit="isInfo"
+      @update:data="detailData = $event"
+      @update:other-data="detailOtherData = $event"
+      @confirm="handleScoreCardConfirm"
       @trial="handleTrial"
     />
   </Page>

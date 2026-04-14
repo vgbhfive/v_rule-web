@@ -25,7 +25,8 @@
   "rule": {
     "title": "规则管理",
     "rule": "规则",
-    "ruleSet": "规则集"
+    "ruleSet": "规则集",
+    "ruleTree": "规则树"
   },
   "product": {
     "title": "产品管理",

@@ -17,17 +17,16 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createDataSource,
-  getDataSouceDetail,
   getDataCategoryDropdownList,
+  getDataSouceDetail,
   getDataSourceList,
   updateDataSource,
   updateDataSourceValid,
 } from '#/api/data';
-import { getFieldTypes, getFieldFuncTypes } from '#/api/enums';
+import { getFieldFuncTypes, getFieldTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
 
 import DataSourceFunctionDialog from './dataSourceFunctionDialog.vue';
-import { ca, fa } from 'element-plus/es/locales.mjs';
 
 const { hasAccessByCodes } = useAccess();
 
@@ -471,7 +470,10 @@ async function handleInfo(row: DataSourceInfo) {
   const detail = await getDataSouceDetail(row.id);
   canEdit.value = true;
   row.function = detail.dataSourceFunction === null ? 0 : 1;
-  DataSourceFunctionInfo.value = detail.dataSourceFunction !== null ? detail.dataSourceFunction : { type: '', func: '', params: '', trial: '' };
+  DataSourceFunctionInfo.value =
+    detail.dataSourceFunction === null
+      ? { type: '', func: '', params: '', trial: '' }
+      : detail.dataSourceFunction;
   editFormApi.setValues(row);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
@@ -590,7 +592,7 @@ function handleAdd() {
       componentProps: {
         disabled: false,
       },
-    },    
+    },
     {
       fieldName: 'function',
       componentProps: {
@@ -615,7 +617,10 @@ async function handleEdit(row: DataSourceInfo) {
   const detail = await getDataSouceDetail(row.id);
   canEdit.value = false;
   row.function = detail.dataSourceFunction === null ? 0 : 1;
-  DataSourceFunctionInfo.value = detail.dataSourceFunction !== null ? detail.dataSourceFunction : { type: '', func: '', params: '', trial: '' };
+  DataSourceFunctionInfo.value =
+    detail.dataSourceFunction === null
+      ? { type: '', func: '', params: '', trial: '' }
+      : detail.dataSourceFunction;
   editFormApi.setValues(row);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
@@ -716,7 +721,8 @@ async function handleSaveEdit(values: any) {
         field: values.field,
         format: values.format || '',
         isValid: values.isValid,
-        dataSourceFunction: values.function === 0 ? null : DataSourceFunctionInfo.value,
+        dataSourceFunction:
+          values.function === 0 ? null : DataSourceFunctionInfo.value,
       };
 
       const resp = await createDataSource(insertData);
@@ -736,7 +742,8 @@ async function handleSaveEdit(values: any) {
         version: currentEditing.value?.version,
         isValid: values.isValid,
         createAt: currentEditing.value?.createAt,
-        dataSourceFunction: values.function === 0 ? null : DataSourceFunctionInfo.value,
+        dataSourceFunction:
+          values.function === 0 ? null : DataSourceFunctionInfo.value,
       };
 
       const resp = await updateDataSource(updateData);
@@ -752,7 +759,12 @@ async function handleSaveEdit(values: any) {
     // 重置表单
     await editFormApi.resetForm();
     currentEditing.value = null;
-    DataSourceFunctionInfo.value = { type: '', func: '', params: '', trial: '' };
+    DataSourceFunctionInfo.value = {
+      type: '',
+      func: '',
+      params: '',
+      trial: '',
+    };
   } catch (error) {
     ElMessage.error('场景更新失败');
     console.error('场景更新失败:', error);
@@ -817,7 +829,6 @@ const canEdit = ref(false);
 const DataSourceFunctionInfo = ref<DataSourceFunction>({});
 const fieldFuncTypes = ref<{ label: string; value: string }[]>([]);
 function handleSaveFunction(values: DataSourceFunction) {
-  console.log(values);
   DataSourceFunctionInfo.value = values;
 }
 </script>
@@ -865,7 +876,7 @@ function handleSaveFunction(values: DataSourceFunction) {
       v-model:visible="functionVisible"
       :data="DataSourceFunctionInfo"
       :can-edit="canEdit"
-      :fieldFuncTypes="fieldFuncTypes"
+      :field-func-types="fieldFuncTypes"
       @submit="handleSaveFunction"
     />
   </Page>

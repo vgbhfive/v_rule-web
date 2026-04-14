@@ -58,6 +58,16 @@ export async function getRuleSetConditionTypes() {
 }
 
 /**
+ * 获取数据源分类条件类型下拉列表
+ * @returns
+ */
+export async function getDataCategoryConditionTypes() {
+  return requestClient.get<{ name: string; value: string }[]>(
+    '/enum/conditionType/dataCategory',
+  );
+}
+
+/**
  * 获取值类型下拉列表
  * @returns
  */

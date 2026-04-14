@@ -32,6 +32,15 @@ const routes: RouteRecordRaw[] = [
         path: '/ruleSet',
         component: () => import('#/views/rule/ruleSet/index.vue'),
       },
+      {
+        meta: {
+          title: $t('page.rule.ruleTree'),
+        },
+        sign: 'rule_tree_manage',
+        name: 'RuleTree',
+        path: '/ruleTree',
+        component: () => import('#/views/rule/ruleTree/index.vue'),
+      },
     ],
   },
 ];

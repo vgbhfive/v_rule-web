@@ -25,7 +25,8 @@
   "rule": {
     "title": "Rule Management",
     "rule": "Rule",
-    "ruleSet": "Rule Set"
+    "ruleSet": "Rule Set",
+    "ruleTree": "Rule Tree"
   },
   "product": {
     "title": "Product Management",
