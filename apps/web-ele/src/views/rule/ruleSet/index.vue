@@ -244,7 +244,7 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
             ),
           );
 
-          if (hasAccessByCodes(['rule_set_manage_update'])) {
+          if (hasAccessByCodes(['rule_set_manage_valid'])) {
             if (ruleSetInfo.isValid === 0) {
               buttons.push(
                 h(

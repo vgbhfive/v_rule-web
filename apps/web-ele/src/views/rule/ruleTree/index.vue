@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { RuleSetInfo, ruleSetParams } from '#/api/rule/ruleSet';
+import type { RuleTreeInfo, RuleTreeParams } from '#/api/rule/ruleTree';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -18,20 +18,19 @@ import {
   getRuleTypes,
 } from '#/api/enums';
 import { getRuleDropdownList } from '#/api/rule';
+import { getRuleSetDropdownList } from '#/api/rule/ruleSet';
 import {
-  createRuleSet,
-  getRuleSetDropdownList,
-  getRuleSetList,
-  updateRuleSet,
-  updateRuleSetValid,
-} from '#/api/rule/ruleSet';
+  getRuleTreeList,
+  updateRuleTreeValid,
+  createRuleTree,
+  updateRuleTree,
+} from '#/api/rule/ruleTree';
 import { getLineDropdownList } from '#/api/system';
 
 const { hasAccessByCodes } = useAccess();
 
 const lineMap = ref<Record<string, string>>({});
 const lineOptions = ref<{ label: string; value: string }[]>([]);
-const ruleMap = ref<Record<string, string>>({});
 const ruleTypeOptions = ref<{ label: string; value: string }[]>([]);
 const combineTypeOptions = ref<{ label: string; value: string }[]>([]);
 const conditionTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -50,20 +49,6 @@ onMounted(async () => {
     label: item.key,
     value: item.value,
   }));
-
-  // 规则/规则集
-  const ruleList = await getRuleDropdownList({ lineNo: '' });
-  const newRuleMap: Record<string, string> = {};
-  for (const item of ruleList) {
-    newRuleMap[item.value] = item.key;
-  }
-  ruleMap.value = newRuleMap;
-  const ruleSetList = await getRuleSetDropdownList({ lineNo: '' });
-  const newRuleSetMap: Record<string, string> = {};
-  for (const item of ruleSetList) {
-    newRuleSetMap[item.value] = item.key;
-  }
-  ruleMap.value = { ...ruleMap.value, ...newRuleSetMap };
 
   // 规则类型
   const ruleTypeList = await getRuleTypes();
@@ -118,19 +103,19 @@ const [QueryForm, queryFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '规则集名称',
+        placeholder: '规则树名称',
         clearable: true,
       },
-      fieldName: 'ruleSetName',
+      fieldName: 'ruleTreeName',
       label: '名称',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '规则集编码',
+        placeholder: '规则树编码',
         clearable: true,
       },
-      fieldName: 'ruleSetNo',
+      fieldName: 'ruleTreeNo',
       label: '编码',
     },
     {
@@ -158,47 +143,30 @@ const [QueryForm, queryFormApi] = useVbenForm({
   ],
   submitButtonOptions: {
     content: '查询',
-    show: hasAccessByCodes(['rule_set_manage']),
+    show: hasAccessByCodes(['rule_tree_manage']),
   },
   wrapperClass: 'grid-cols-3 grid-cols-4',
 });
 
 // 表单提交处理
-async function onSubmit(values: ruleSetParams) {
+async function onSubmit(values: RuleTreeParams) {
   await gridApi.reload({ ...values });
 }
 
 // 表格配置
-const gridOptions: VxeGridProps<RuleSetInfo> = {
+const gridOptions: VxeGridProps<RuleTreeInfo> = {
   columns: [
     { type: 'seq', title: '序号', width: 50 },
     {
       field: 'lineNo',
       title: '业务线',
       slots: {
-        default: ({ row }: { row: RuleSetInfo }) =>
+        default: ({ row }: { row: RuleTreeInfo }) =>
           lineMap.value[row.lineNo] || row.lineNo,
       },
     },
-    { field: 'ruleSetName', title: '名称' },
-    { field: 'ruleSetNo', title: '编码' },
-    {
-      field: 'firstNo',
-      title: 'A',
-      slots: {
-        default: ({ row }: { row: RuleSetInfo }) =>
-          ruleMap.value[row.firstNo] || row.firstNo,
-      },
-    },
-    { field: 'combine', title: '联合', width: 50 },
-    {
-      field: 'secondNo',
-      title: 'B',
-      slots: {
-        default: ({ row }: { row: RuleSetInfo }) =>
-          ruleMap.value[row.secondNo] || row.secondNo,
-      },
-    },
+    { field: 'ruleTreeName', title: '名称' },
+    { field: 'ruleTreeNo', title: '编码' },
     { field: 'cond', title: '条件', width: 50 },
     { field: 'threshold', title: '阈值', width: 80 },
     { field: 'result', title: '结果', width: 80 },
@@ -215,17 +183,17 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
       title: '操作',
       width: 200,
       slots: {
-        default: ({ row: ruleSetInfo }: { row: RuleSetInfo }) => {
+        default: ({ row: ruleTreeInfo }: { row: RuleTreeInfo }) => {
           const buttons = [];
 
-          if (hasAccessByCodes(['rule_set_manage_update'])) {
+          if (hasAccessByCodes(['rule_tree_manage_update'])) {
             buttons.push(
               h(
                 ElButton,
                 {
                   type: 'primary',
                   size: 'small',
-                  onClick: () => handleEdit(ruleSetInfo),
+                  onClick: () => handleEdit(ruleTreeInfo),
                 },
                 { default: () => '编辑' },
               ),
@@ -238,21 +206,21 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
               {
                 type: 'info',
                 size: 'small',
-                onClick: () => handleInfo(ruleSetInfo),
+                onClick: () => handleInfo(ruleTreeInfo),
               },
               { default: () => '详情' },
             ),
           );
 
-          if (hasAccessByCodes(['rule_set_manage_update'])) {
-            if (ruleSetInfo.isValid === 0) {
+          if (hasAccessByCodes(['rule_tree_manage_valid'])) {
+            if (ruleTreeInfo.isValid === 0) {
               buttons.push(
                 h(
                   ElButton,
                   {
                     type: 'success',
                     size: 'small',
-                    onClick: () => handleValid(ruleSetInfo),
+                    onClick: () => handleValid(ruleTreeInfo),
                   },
                   { default: () => '生效' },
                 ),
@@ -264,7 +232,7 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
                   {
                     type: 'warning',
                     size: 'small',
-                    onClick: () => handleInvalid(ruleSetInfo),
+                    onClick: () => handleInvalid(ruleTreeInfo),
                   },
                   { default: () => '失效' },
                 ),
@@ -294,7 +262,7 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
           currPage: page.currentPage,
           limit: page.pageSize,
         };
-        return await getRuleSetList(params);
+        return await getRuleTreeList(params);
       },
     },
   },
@@ -303,7 +271,7 @@ const gridOptions: VxeGridProps<RuleSetInfo> = {
   },
 };
 
-const gridEvents: VxeGridListeners<RuleSetInfo> = {
+const gridEvents: VxeGridListeners<RuleTreeInfo> = {
   // 可以添加表格事件监听
 };
 
@@ -311,13 +279,11 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 
 // 编辑弹窗状态
 const editDrawerVisible = ref(false);
-const currentEditing = ref<null | RuleSetInfo>(null);
+const currentEditing = ref<null | RuleTreeInfo>(null);
 const drawerTitle = ref('');
 const firstNoOptions = ref<{ label: string; value: string }[]>([]);
 const secondNoOptions = ref<{ label: string; value: string }[]>([]);
 const preLineNo = ref('');
-const preFirstType = ref('');
-const preSecondType = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
 
@@ -347,72 +313,20 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入规则集名称',
+        placeholder: '请输入规则树名称',
       },
-      fieldName: 'ruleSetName',
-      label: '规则集名称',
+      fieldName: 'ruleTreeName',
+      label: '规则树名称',
       rules: 'required',
     },
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入规则集编码',
+        placeholder: '请输入规则树编码',
         disabled: true,
       },
-      fieldName: 'ruleSetNo',
-      label: '规则集编码',
-      rules: 'required',
-    },
-    {
-      component: 'ApiSelect',
-      componentProps: {
-        options: ruleTypeOptions,
-        placeholder: '请选择规则A类型',
-      },
-      fieldName: 'firstType',
-      label: '类型A',
-      rules: 'required',
-    },
-    {
-      component: 'ApiSelect',
-      componentProps: {
-        options: firstNoOptions,
-        placeholder: '请输入规则A编码',
-        disabled: true,
-      },
-      fieldName: 'firstNo',
-      label: '编码A',
-      rules: 'required',
-    },
-    {
-      component: 'ApiSelect',
-      componentProps: {
-        options: combineTypeOptions,
-        placeholder: '请输入联合条件',
-      },
-      fieldName: 'combine',
-      label: '联合条件',
-      rules: 'required',
-    },
-    {
-      component: 'ApiSelect',
-      componentProps: {
-        options: ruleTypeOptions,
-        placeholder: '请选择规则B类型',
-      },
-      fieldName: 'secondType',
-      label: '类型B',
-      rules: 'required',
-    },
-    {
-      component: 'ApiSelect',
-      componentProps: {
-        options: secondNoOptions,
-        placeholder: '请输入规则B编码',
-        disabled: true,
-      },
-      fieldName: 'secondNo',
-      label: '编码B',
+      fieldName: 'ruleTreeNo',
+      label: '规则树编码',
       rules: 'required',
     },
     {
@@ -476,8 +390,8 @@ const [EditForm, editFormApi] = useVbenForm({
 });
 
 // 详情
-function handleInfo(row: RuleSetInfo) {
-  drawerTitle.value = '规则集详情';
+function handleInfo(row: RuleTreeInfo) {
+  drawerTitle.value = '规则树详情';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
@@ -565,7 +479,7 @@ function handleInfo(row: RuleSetInfo) {
 
 // 新增
 function handleAdd() {
-  drawerTitle.value = '新增规则集';
+  drawerTitle.value = '新增规则树';
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 设置部分字段可编辑
@@ -577,47 +491,17 @@ function handleAdd() {
       },
     },
     {
-      fieldName: 'ruleSetName',
+      fieldName: 'ruleTreeName',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'ruleSetNo',
+      fieldName: 'ruleTreeNo',
       componentProps: {
         disabled: false,
       },
       hide: true,
-    },
-    {
-      fieldName: 'firstType',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'firstNo',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'combine',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'secondNo',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'secondType',
-      componentProps: {
-        disabled: false,
-      },
     },
     {
       fieldName: 'cond',
@@ -652,8 +536,8 @@ function handleAdd() {
 }
 
 // 编辑
-function handleEdit(row: RuleSetInfo) {
-  drawerTitle.value = '编辑规则集';
+function handleEdit(row: RuleTreeInfo) {
+  drawerTitle.value = '编辑规则树';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
@@ -668,45 +552,15 @@ function handleEdit(row: RuleSetInfo) {
       },
     },
     {
-      fieldName: 'ruleSetName',
+      fieldName: 'ruleTreeName',
       componentProps: {
         disabled: false,
       },
     },
     {
-      fieldName: 'ruleSetNo',
+      fieldName: 'ruleTreeNo',
       componentProps: {
         disabled: true,
-      },
-    },
-    {
-      fieldName: 'firstType',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'firstNo',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'combine',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'secondType',
-      componentProps: {
-        disabled: false,
-      },
-    },
-    {
-      fieldName: 'secondNo',
-      componentProps: {
-        disabled: false,
       },
     },
     {
@@ -738,16 +592,14 @@ function handleEdit(row: RuleSetInfo) {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = false;
   isEdit.value = true;
-  preFirstType.value = row.firstType;
-  preSecondType.value = row.secondType;
   editDrawerVisible.value = true;
 }
 
 // 生效
-async function handleValid(row: RuleSetInfo) {
+async function handleValid(row: RuleTreeInfo) {
   try {
     const data = { id: row.id, isValid: 1 };
-    const resp = await updateRuleSetValid(data);
+    const resp = await updateRuleTreeValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -758,10 +610,10 @@ async function handleValid(row: RuleSetInfo) {
 }
 
 // 失效
-async function handleInvalid(row: RuleSetInfo) {
+async function handleInvalid(row: RuleTreeInfo) {
   try {
     const data = { id: row.id, isValid: 0 };
-    const resp = await updateRuleSetValid(data);
+    const resp = await updateRuleTreeValid(data);
     ElMessage.success(resp);
 
     const values = await queryFormApi.getValues();
@@ -773,106 +625,7 @@ async function handleInvalid(row: RuleSetInfo) {
 
 // 值变化
 async function handleValuesChange(values: any) {
-  if (isAdd.value) {
-    if (values.lineNo && values.lineNo !== preLineNo.value) {
-      const data = {
-        lineNo: values.lineNo,
-      };
-      const insertRuleList = await getRuleDropdownList(data);
-      insertRuleOptions.value = insertRuleList.map((item) => ({
-        label: item.key,
-        value: item.value,
-      }));
-      const insertRuleSetList = await getRuleSetDropdownList(data);
-      insertRuleSetOptions.value = insertRuleSetList.map((item) => ({
-        label: item.key,
-        value: item.value,
-      }));
-
-      values.firstNo = '';
-      values.firstType = '';
-      values.secondNo = '';
-      values.secondType = '';
-      editFormApi.setValues(values);
-      preLineNo.value = values.lineNo;
-    } else if (values.firstType && values.firstType !== preFirstType.value) {
-      preFirstType.value = values.firstType;
-      if (values.firstType === 'rule') {
-        firstNoOptions.value = insertRuleOptions.value;
-      } else if (values.firstType === 'rule_set') {
-        firstNoOptions.value = insertRuleSetOptions.value;
-      }
-      secondNoOptions.value = [];
-      values.firstNo = '';
-      editFormApi.setValues(values);
-
-      preFirstType.value = values.firstType;
-    } else if (values.secondType && values.secondType !== preSecondType.value) {
-      preSecondType.value = values.secondType;
-      if (values.secondType === 'rule') {
-        secondNoOptions.value = insertRuleOptions.value;
-      } else if (values.secondType === 'rule_set') {
-        secondNoOptions.value = insertRuleSetOptions.value;
-      }
-      firstNoOptions.value = [];
-      values.secondNo = '';
-      editFormApi.setValues(values);
-
-      preSecondType.value = values.secondType;
-    }
-  }
-
-  if (isEdit.value) {
-    if (values.lineNo && values.lineNo !== preLineNo.value) {
-      const data = {
-        lineNo: values.lineNo,
-      };
-      const insertRuleList = await getRuleDropdownList(data);
-      insertRuleOptions.value = insertRuleList.map((item) => ({
-        label: item.key,
-        value: item.value,
-      }));
-      const insertRuleSetList = await getRuleSetDropdownList(data);
-      insertRuleSetOptions.value = insertRuleSetList.map((item) => ({
-        label: item.key,
-        value: item.value,
-      }));
-      if (values.firstType === 'rule') {
-        firstNoOptions.value = insertRuleOptions.value;
-      } else if (values.firstType === 'rule_set') {
-        firstNoOptions.value = insertRuleSetOptions.value;
-      }
-      if (values.secondType === 'rule') {
-        secondNoOptions.value = insertRuleOptions.value;
-      } else if (values.secondType === 'rule_set') {
-        secondNoOptions.value = insertRuleSetOptions.value;
-      }
-
-      preLineNo.value = values.lineNo;
-      preFirstType.value = values.firstType;
-      preSecondType.value = values.secondType;
-    } else if (values.firstType && values.firstType !== preFirstType.value) {
-      if (values.firstType === 'rule') {
-        firstNoOptions.value = insertRuleOptions.value;
-      } else if (values.firstType === 'rule_set') {
-        firstNoOptions.value = insertRuleSetOptions.value;
-      }
-      secondNoOptions.value = [];
-
-      preFirstType.value = values.firstType;
-      editFormApi.setFieldValue('firstNo', '');
-    } else if (values.secondType && values.secondType !== preSecondType.value) {
-      if (values.secondType === 'rule') {
-        secondNoOptions.value = insertRuleOptions.value;
-      } else if (values.secondType === 'rule_set') {
-        secondNoOptions.value = insertRuleSetOptions.value;
-      }
-      firstNoOptions.value = [];
-
-      preSecondType.value = values.secondType;
-      editFormApi.setFieldValue('secondNo', '');
-    }
-  }
+  console.log(values);
 }
 
 // 保存
@@ -881,19 +634,15 @@ async function handleSaveEdit(values: any) {
     if (isAdd.value) {
       const insertData = {
         lineNo: values.lineNo,
-        ruleSetName: values.ruleSetName,
-        firstNo: values.firstNo,
-        firstType: values.firstType,
-        combine: values.combine,
-        secondNo: values.secondNo,
-        secondType: values.secondType,
+        ruleTreeName: values.ruleTreeName,
         cond: values.cond,
         threshold: values.threshold,
         result: values.result,
         isValid: values.isValid,
+        detailEntityList: []
       };
 
-      const resp = await createRuleSet(insertData);
+      const resp = await createRuleTree(insertData);
       ElMessage.success(resp);
     }
 
@@ -901,22 +650,18 @@ async function handleSaveEdit(values: any) {
       const updateData = {
         id: currentEditing.value?.id,
         lineNo: values.lineNo,
-        ruleSetName: values.ruleSetName,
-        ruleSetNo: currentEditing.value?.ruleSetNo,
-        firstNo: values.firstNo,
-        firstType: values.firstType,
-        combine: values.combine,
-        secondNo: values.secondNo,
-        secondType: values.secondType,
+        ruleTreeName: values.ruleTreeName,
+        ruleTreeNo: currentEditing.value?.ruleTreeNo,
         cond: values.cond,
         threshold: values.threshold,
         result: values.result,
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
+        detailEntityList: []
       };
 
-      const resp = await updateRuleSet(updateData);
+      const resp = await updateRuleTree(updateData);
       ElMessage.success(resp);
     }
 
@@ -973,7 +718,7 @@ function handleDrawerClose(done: () => void) {
       </div>
       <div
         class="mb-4 mt-4 flex justify-start pl-[15px]"
-        v-if="hasAccessByCodes(['rule_set_manage_create'])"
+        v-if="hasAccessByCodes(['rule_tree_manage_create'])"
       >
         <ElButton type="primary" @click="handleAdd" size="default">
           <i class="el-icon-plus mr-1"></i>
