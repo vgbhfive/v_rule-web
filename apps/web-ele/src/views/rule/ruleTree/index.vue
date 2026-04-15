@@ -17,13 +17,11 @@ import {
   getRuleSetConditionTypes,
   getRuleTypes,
 } from '#/api/enums';
-import { getRuleDropdownList } from '#/api/rule';
-import { getRuleSetDropdownList } from '#/api/rule/ruleSet';
 import {
-  getRuleTreeList,
-  updateRuleTreeValid,
   createRuleTree,
+  getRuleTreeList,
   updateRuleTree,
+  updateRuleTreeValid,
 } from '#/api/rule/ruleTree';
 import { getLineDropdownList } from '#/api/system';
 
@@ -639,7 +637,7 @@ async function handleSaveEdit(values: any) {
         threshold: values.threshold,
         result: values.result,
         isValid: values.isValid,
-        detailEntityList: []
+        detailEntityList: [],
       };
 
       const resp = await createRuleTree(insertData);
@@ -658,7 +656,7 @@ async function handleSaveEdit(values: any) {
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
-        detailEntityList: []
+        detailEntityList: [],
       };
 
       const resp = await updateRuleTree(updateData);

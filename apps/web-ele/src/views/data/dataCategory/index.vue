@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
 import type {
+  DataCategoryCalcDetail,
   DataCategoryDetail,
   DataCategoryInfo,
   DataCategoryParams,
@@ -688,6 +689,7 @@ async function handleSaveEdit(values: any) {
         categoryType: values.categoryType,
         isValid: values.isValid,
         detailList: [...detailData.value, ...detailOtherData.value],
+        detailCalcList: detailCalcOtherData.value,
       };
 
       const resp = await createDataCategory(insertData);
@@ -708,6 +710,7 @@ async function handleSaveEdit(values: any) {
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
         detailList: [...detailData.value, ...detailOtherData.value],
+        detailCalcList: detailCalcOtherData.value,
       };
 
       const resp = await updateDataCategory(updateData);
@@ -805,11 +808,7 @@ const httpVisible = ref(false);
 const scoreCardVisible = ref(false);
 const detailData = ref<DataCategoryDetail[]>([]);
 const detailOtherData = ref<DataCategoryDetail[]>([]);
-
-// Python数据源分类提交
-async function handlePythonConfirm() {
-  pythonVisible.value = false;
-}
+const detailCalcOtherData = ref<DataCategoryCalcDetail[]>([]);
 
 // 数据源分类试算
 async function handleTrial() {
@@ -824,13 +823,23 @@ async function handleTrial() {
   if (editData?.categoryType === 2 && editData?.sourceFrom !== 'http') {
     ElMessage.warning('HTTP数据源分类的一级来源必须为【http】');
   }
+  if (editData?.categoryType === 3 && editData?.sourceFrom !== 'scoreCard') {
+    ElMessage.warning('评分卡数据源分类的一级来源必须为【scoreCard】');
+  }
   const data = {
     detailList: [...detailData.value, ...detailOtherData.value],
     lineNo: editData.lineNo,
     sourceFrom: editData.sourceFrom,
+    detailCalcList: detailCalcOtherData.value,
   };
+  console.log(data);
   const resp = await dataCategoryTrial(data);
   ElMessage.success({ message: resp, duration: 5000 });
+}
+
+// Python数据源分类提交
+async function handlePythonConfirm() {
+  pythonVisible.value = false;
 }
 
 // HTTP数据源分类提交
@@ -913,10 +922,12 @@ async function handleScoreCardConfirm() {
       v-model="scoreCardVisible"
       :data="detailData"
       :other-data="detailOtherData"
+      :calc-other-data="detailCalcOtherData"
       :data-source-list="allDataSourceOptions"
       :can-edit="isInfo"
       @update:data="detailData = $event"
       @update:other-data="detailOtherData = $event"
+      @update:calc-other-data="detailCalcOtherData = $event"
       @confirm="handleScoreCardConfirm"
       @trial="handleTrial"
     />

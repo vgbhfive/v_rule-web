@@ -34,6 +34,15 @@ export interface DataCategoryDetail {
   trialValue?: string;
 }
 
+export interface DataCategoryCalcDetail {
+  dataCategoryNo?: string;
+  valueType: string;
+  value: string;
+  cond: string;
+  threshold: string;
+  res: string;
+}
+
 /**
  * 获取数据源分类列表
  */

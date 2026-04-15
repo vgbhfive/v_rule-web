@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DataCategoryDetail } from '#/api/data';
+import type { DataCategoryCalcDetail, DataCategoryDetail } from '#/api/data';
 
 import { computed, onMounted, ref } from 'vue';
 
@@ -7,17 +7,19 @@ import { useAccess } from '@vben/access';
 
 import {
   ElButton,
+  ElCol,
   ElDialog,
-  ElFormItem,
   ElInput,
   ElMessage,
   ElOption,
+  ElRow,
   ElSelect,
 } from 'element-plus';
 
 import { getValueTypes } from '#/api/enums';
 
 const props = defineProps<{
+  calcOtherData: DataCategoryCalcDetail[];
   canEdit: boolean;
   data: DataCategoryDetail[];
   dataSourceList: { label: string; value: string }[];
@@ -29,6 +31,7 @@ const emit = defineEmits([
   'update:modelValue',
   'update:data',
   'update:other-data',
+  'update:calc-other-data',
   'confirm',
   'trial',
 ]);
@@ -43,10 +46,6 @@ const visible = computed({
 const comment = ref('');
 const isTrial = ref(false);
 const allValueOptions = ref<{ label: string; value: string }[]>([]);
-const requestUrl = ref('');
-const requestType = ref('');
-const requestStatusField = ref('');
-const requestStatusCode = ref('');
 
 onMounted(async () => {
   // 阈值类型
@@ -66,39 +65,52 @@ const handleClosed = () => {
   comment.value = '';
 };
 
-const generateHttpInfo = () => {
-  const url: DataCategoryDetail = {
-    key: 'requestUrl',
+const generateScoreCardInfo = () => {
+  const baseScoreItem = {
+    key: 'baseScore',
     valueType: 'fixed',
-    value: requestUrl.value,
-    trialValue: requestUrl.value,
+    value: baseScore.value,
+    trialValue: baseScore.value,
   };
-  const type: DataCategoryDetail = {
-    key: 'requestType',
+  const scoringMethodItem = {
+    key: 'scoringMethod',
     valueType: 'fixed',
-    value: requestType.value,
-    trialValue: requestType.value,
+    value: scoringMethod.value,
+    trialValue: scoringMethod.value,
   };
-  const field: DataCategoryDetail = {
-    key: 'requestStatusField',
-    valueType: 'fixed',
-    value: requestStatusField.value,
-    trialValue: requestStatusField.value,
-  };
-  const code: DataCategoryDetail = {
-    key: 'requestStatusCode',
-    valueType: 'fixed',
-    value: requestStatusCode.value,
-    trialValue: requestStatusCode.value,
-  };
-  emit('update:other-data', [url, type, field, code]);
+  const configItems: DataCategoryDetail[] = [];
+  configList.value.forEach((item) => {
+    configItems.push({
+      key: item.value,
+      valueType: item.valueType,
+      value: item.value,
+      trialValue: item.trialValue,
+    });
+  });
+  emit('update:other-data', [baseScoreItem, scoringMethodItem, ...configItems]);
+  console.log(configList.value);
+
+  const calcItems: DataCategoryCalcDetail[] = [];
+  configList.value.forEach((item) => {
+    item.rules.forEach((rule) => {
+      calcItems.push({
+        valueType: item.valueType,
+        value: item.value,
+        cond: rule.cond,
+        threshold: rule.threshold,
+        res: rule.res,
+      });
+    });
+  });
+  console.log(calcItems);
+  emit('update:calc-other-data', calcItems);
 };
 
 // 试算
 const handleTrial = () => {
   // 清空其他数据
   emit('update:other-data', []);
-  generateHttpInfo();
+  generateScoreCardInfo();
   emit('trial', comment.value);
   isTrial.value = true;
 };
@@ -109,27 +121,59 @@ const handleConfirm = () => {
     ElMessage.warning('请先完成试算后再提交');
     return;
   }
-  generateHttpInfo();
+  generateScoreCardInfo();
   emit('confirm', comment.value);
   isTrial.value = false;
 };
 
-const addDataSource = () => {
-  const newItem: DataCategoryDetail = {
-    key: '',
-    valueType: 'fixed',
-    value: '',
-    trialValue: '',
-  };
-  // 将新数组传回父组件（克隆一份旧数组并加上新项）
-  emit('update:data', [...props.data, newItem]);
+/**
+ * 核心响应式数据结构
+ * configList: 对应 UI 中多个“选择数据源”区块
+ */
+const configList = ref([
+  {
+    valueType: 'dataSource',
+    value: '', // 选中的数据源
+    trialValue: '', // 试算值
+    rules: [
+      // 该数据源下的评分规则列表
+      { cond: '', threshold: '', res: '' },
+    ],
+  },
+]);
+
+// 计分方式
+const scoringMethod = ref('');
+const baseScore = ref(0);
+
+/**
+ * 为指定组添加规则行
+ */
+const handleAddRule = (gIdx: number) => {
+  configList.value[gIdx].rules.push({
+    cond: '',
+    threshold: '',
+    res: '',
+  });
 };
 
-const removeDataSource = (index: number) => {
-  emit(
-    'update:data',
-    props.data.filter((_, i) => i !== index),
-  );
+/**
+ * 删除指定组的规则行
+ */
+const handleDeleteRule = (gIdx: number, rIdx: number) => {
+  configList.value[gIdx].rules.splice(rIdx, 1);
+};
+
+/**
+ * 逻辑：添加一条全新的记录（整块配置）
+ */
+const handleAddRecord = () => {
+  configList.value.push({
+    valueType: 'dataSource',
+    value: '',
+    trialValue: '',
+    rules: [{ cond: '', threshold: '', res: '' }],
+  });
 };
 </script>
 
@@ -144,93 +188,91 @@ const removeDataSource = (index: number) => {
     @vue:mounted="handleMount"
   >
     <!-- 评分卡 -->
-    <div>dddd</div>
-
-    <!-- 数据源 -->
-    <div class="data-source-container" style="margin-top: 20px">
-      <div class="items-left text-medium mb-3 flex">
-        <span style="font-size: 16px">依赖数据源</span>
-      </div>
-
-      <div
-        v-for="(item, index) in props.data"
-        :key="index"
-        class="data-row mb-3 flex items-center gap-3"
-      >
-        <div class="column-key">
-          <ElFormItem :prop="`data.${index}.key`" class="no-margin">
-            <ElInput
-              v-model="item.key"
-              placeholder="字段名"
-              :disabled="props.canEdit"
-            />
-          </ElFormItem>
-        </div>
-
-        <div class="column-type">
-          <ElFormItem :prop="`data.${index}.valueType`" class="no-margin">
+    <div class="score-config-container">
+      <div v-for="(item, gIdx) in configList" :key="gIdx" class="group-wrapper">
+        <ElRow :gutter="20" type="flex">
+          <ElCol :span="6" class="left-action-zone">
             <ElSelect
-              v-model="item.valueType"
-              @change="item.value = ''"
-              placeholder="选择类型"
-              :disabled="props.canEdit"
+              v-model="item.value"
+              placeholder="选择数据源"
+              class="w-full"
             >
               <ElOption
-                v-for="type in allValueOptions"
-                :key="type.value"
-                :label="type.label"
-                :value="type.value"
+                v-for="source in dataSourceList"
+                :key="source.value"
+                :label="source.label"
+                :value="source.value"
               />
             </ElSelect>
-          </ElFormItem>
-        </div>
 
-        <div class="column-value">
-          <ElFormItem :prop="`data.${index}.value`" class="no-margin">
-            <ElInput
-              v-if="item.valueType === 'fixed'"
-              v-model="item.value"
-              placeholder="固定值"
-              :disabled="props.canEdit"
-            />
-            <ElSelect
-              v-else-if="item.valueType === 'dataSource'"
-              v-model="item.value"
-              placeholder="数据源"
-              :disabled="props.canEdit"
+            <div class="trial-row">
+              <ElButton type="primary" @click="handleAddRule(gIdx)">
+                新增
+              </ElButton>
+              <ElInput
+                v-model="item.trialValue"
+                placeholder="试算值"
+                class="trial-input"
+              />
+            </div>
+          </ElCol>
+
+          <ElCol :span="18">
+            <div
+              v-for="(rule, rIdx) in item.rules"
+              :key="rIdx"
+              class="rule-line"
             >
-              <ElOption
-                v-for="option in props.dataSourceList"
-                :key="option.value"
-                :label="option.label"
-                :value="option.value"
+              <ElSelect
+                v-model="rule.cond"
+                placeholder="运算符"
+                style="width: 150px"
+              >
+                <ElOption label=">" value=">" />
+                <ElOption label="<" value="<" />
+                <ElOption label="=" value="=" />
+              </ElSelect>
+
+              <ElInput
+                v-model="rule.threshold"
+                placeholder="阈值"
+                style="width: 120px"
               />
-            </ElSelect>
-            <ElInput v-else disabled placeholder="值内容" />
-          </ElFormItem>
-        </div>
 
-        <div class="column-trial">
-          <ElFormItem :prop="`data.${index}.trialValue`" class="no-margin">
-            <ElInput
-              v-model="item.trialValue"
-              placeholder="试算值"
-              :disabled="props.canEdit"
-            />
-          </ElFormItem>
-        </div>
+              <ElInput
+                v-model="rule.res"
+                placeholder="分值"
+                style="width: 120px"
+              />
 
-        <div class="column-action" v-if="!props.canEdit">
-          <ElButton type="danger" link @click="removeDataSource(index)">
-            删除
-          </ElButton>
-        </div>
+              <ElButton type="danger" @click="handleDeleteRule(gIdx, rIdx)">
+                删除
+              </ElButton>
+            </div>
+          </ElCol>
+        </ElRow>
       </div>
 
-      <div class="mt-4" v-if="!props.canEdit">
-        <ElButton type="primary" plain @click="addDataSource">
-          + 添加
-        </ElButton>
+      <div>
+        <ElButton type="info" @click="handleAddRecord"> 添加数据源 </ElButton>
+      </div>
+
+      <div class="scoring-method-section">
+        <span>计分方式</span>
+        <ElSelect
+          v-model="scoringMethod"
+          placeholder="计分方式"
+          style="width: 160px"
+        >
+          <ElOption label="累加" value="sum" />
+          <ElOption label="平均" value="avg" />
+        </ElSelect>
+        <span>基础评分</span>
+        <ElInput
+          v-model="baseScore"
+          placeholder="基础评分"
+          style="width: 160px"
+        />
       </div>
     </div>
 
@@ -281,5 +323,71 @@ const removeDataSource = (index: number) => {
 .data-row {
   display: flex;
   align-items: center;
+}
+
+.score-config-container {
+  padding: 10px;
+}
+
+/* 区块间距 */
+.group-wrapper {
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+  border-bottom: 1px dashed #ebeef5;
+}
+
+/* 左侧垂直布局 */
+.left-action-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trial-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.trial-input {
+  flex: 1;
+}
+
+/* 右侧规则行样式 */
+.rule-line {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* 还原图中深色按钮风格 */
+.dark-btn {
+  color: white !important;
+  background-color: #4b4e57 !important;
+  border-color: #4b4e57 !important;
+}
+
+.dark-btn:hover {
+  background-color: #333 !important;
+  opacity: 0.9;
+}
+
+/* 底部计分方式 */
+.scoring-method-section {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.method-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.w-full {
+  width: 100%;
 }
 </style>
