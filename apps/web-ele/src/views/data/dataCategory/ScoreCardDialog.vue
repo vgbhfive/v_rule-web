@@ -56,7 +56,17 @@ onMounted(async () => {
   }));
 });
 
-const handleMount = () => {};
+const handleMount = () => {
+  console.log(props);
+  props.otherData.forEach((item) => {
+    if (item.key === 'baseScore') {
+      baseScore.value = item.value;
+    }
+    if (item.key === 'scoringMethod') {
+      scoringMethod.value = item.value;
+    }
+  });
+};
 
 // 关闭
 const handleClosed = () => {
@@ -91,6 +101,7 @@ const generateScoreCardInfo = () => {
   console.log(configList.value);
 
   const calcItems: DataCategoryCalcDetail[] = [];
+  let index = 1;
   configList.value.forEach((item) => {
     item.rules.forEach((rule) => {
       calcItems.push({
@@ -99,6 +110,7 @@ const generateScoreCardInfo = () => {
         cond: rule.cond,
         threshold: rule.threshold,
         res: rule.res,
+        priority: index++,
       });
     });
   });
@@ -144,7 +156,7 @@ const configList = ref([
 
 // 计分方式
 const scoringMethod = ref('');
-const baseScore = ref(0);
+const baseScore = ref('');
 
 /**
  * 为指定组添加规则行
@@ -162,6 +174,9 @@ const handleAddRule = (gIdx: number) => {
  */
 const handleDeleteRule = (gIdx: number, rIdx: number) => {
   configList.value[gIdx].rules.splice(rIdx, 1);
+  if (configList.value[gIdx].rules.length === 0) {
+    configList.value.splice(gIdx, 1);
+  }
 };
 
 /**

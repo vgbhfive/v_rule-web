@@ -426,6 +426,18 @@ async function handleInfo(row: DataCategoryInfo) {
       }
     });
   }
+    if (row.categoryType === 3) {
+    // 评分卡数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detail.detailList.forEach((item) => {
+      if (item.key === 'baseScore' || item.key === 'scoringMethod') {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
+    detailCalcOtherData.value = detail.detailCalcList;
+  }
   editFormApi.setValues(row);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
@@ -585,6 +597,19 @@ async function handleEdit(row: DataCategoryInfo) {
         detailData.value.push(item);
       }
     });
+  }
+  if (row.categoryType === 3) {
+    // 评分卡数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    console.log(detail);
+    detail.detailList.forEach((item) => {
+      if (item.key === 'baseScore' || item.key === 'scoringMethod') {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
+    detailCalcOtherData.value = detail.detailCalcList;
   }
   editFormApi.setValues(row);
   // 设置部分字段不可编辑

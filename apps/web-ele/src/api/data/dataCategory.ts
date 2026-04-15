@@ -17,6 +17,7 @@ export interface DataCategoryInfo {
   version: number;
   createAt: string;
   detailList: DataCategoryDetail[];
+  detailCalcList: DataCategoryCalcDetail[];
 }
 
 export interface DataCategoryParams {
@@ -41,6 +42,7 @@ export interface DataCategoryCalcDetail {
   cond: string;
   threshold: string;
   res: string;
+  priority: number;
 }
 
 /**
