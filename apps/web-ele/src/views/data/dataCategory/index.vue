@@ -426,7 +426,7 @@ async function handleInfo(row: DataCategoryInfo) {
       }
     });
   }
-    if (row.categoryType === 3) {
+  if (row.categoryType === 3) {
     // 评分卡数据源分类
     const detail = await getDataCategoryDetail(row.id);
     detail.detailList.forEach((item) => {
@@ -601,7 +601,6 @@ async function handleEdit(row: DataCategoryInfo) {
   if (row.categoryType === 3) {
     // 评分卡数据源分类
     const detail = await getDataCategoryDetail(row.id);
-    console.log(detail);
     detail.detailList.forEach((item) => {
       if (item.key === 'baseScore' || item.key === 'scoringMethod') {
         detailOtherData.value.push(item);

@@ -16,7 +16,7 @@ import {
   ElSelect,
 } from 'element-plus';
 
-import { getValueTypes } from '#/api/enums';
+import { getDataCategoryConditionTypes, getValueTypes } from '#/api/enums';
 
 const props = defineProps<{
   calcOtherData: DataCategoryCalcDetail[];
@@ -46,6 +46,9 @@ const visible = computed({
 const comment = ref('');
 const isTrial = ref(false);
 const allValueOptions = ref<{ label: string; value: string }[]>([]);
+const dataCategoryConditionOptions = ref<{ label: string; value: string }[]>(
+  [],
+);
 
 onMounted(async () => {
   // 阈值类型
@@ -54,10 +57,18 @@ onMounted(async () => {
     label: item.name,
     value: item.type,
   }));
+
+  // 运算符类型
+  const dataCategoryConditionList = await getDataCategoryConditionTypes();
+  dataCategoryConditionOptions.value = dataCategoryConditionList.map(
+    (item) => ({
+      label: item.name,
+      value: item.value,
+    }),
+  );
 });
 
 const handleMount = () => {
-  console.log(props);
   props.otherData.forEach((item) => {
     if (item.key === 'baseScore') {
       baseScore.value = item.value;
@@ -65,6 +76,22 @@ const handleMount = () => {
     if (item.key === 'scoringMethod') {
       scoringMethod.value = item.value;
     }
+  });
+
+  configList.value = props.data.map((item) => {
+    return {
+      valueType: item.valueType,
+      value: item.value,
+      trialValue: item.trialValue,
+      rules: props.calcOtherData
+        .filter((rule) => rule.value === item.value)
+        .toSorted((a, b) => a.priority - b.priority) // 按优先级排序
+        .map((rule) => ({
+          cond: rule.cond,
+          threshold: rule.threshold,
+          res: rule.res,
+        })),
+    };
   });
 };
 
@@ -76,6 +103,10 @@ const handleClosed = () => {
 };
 
 const generateScoreCardInfo = () => {
+  if (!scoringMethod.value) {
+    ElMessage.warning('请选择计分方式');
+    return 1;
+  }
   const baseScoreItem = {
     key: 'baseScore',
     valueType: 'fixed',
@@ -98,7 +129,6 @@ const generateScoreCardInfo = () => {
     });
   });
   emit('update:other-data', [baseScoreItem, scoringMethodItem, ...configItems]);
-  console.log(configList.value);
 
   const calcItems: DataCategoryCalcDetail[] = [];
   let index = 1;
@@ -114,7 +144,10 @@ const generateScoreCardInfo = () => {
       });
     });
   });
-  console.log(calcItems);
+  if (calcItems.length === 0) {
+    ElMessage.warning('请添加评分规则');
+    return 1;
+  }
   emit('update:calc-other-data', calcItems);
 };
 
@@ -122,7 +155,10 @@ const generateScoreCardInfo = () => {
 const handleTrial = () => {
   // 清空其他数据
   emit('update:other-data', []);
-  generateScoreCardInfo();
+  const ret = generateScoreCardInfo();
+  if (ret === 1) {
+    return;
+  }
   emit('trial', comment.value);
   isTrial.value = true;
 };
@@ -133,7 +169,10 @@ const handleConfirm = () => {
     ElMessage.warning('请先完成试算后再提交');
     return;
   }
-  generateScoreCardInfo();
+  const ret = generateScoreCardInfo();
+  if (ret === 1) {
+    return;
+  }
   emit('confirm', comment.value);
   isTrial.value = false;
 };
@@ -156,7 +195,7 @@ const configList = ref([
 
 // 计分方式
 const scoringMethod = ref('');
-const baseScore = ref('');
+const baseScore = ref('0');
 
 /**
  * 为指定组添加规则行
@@ -197,7 +236,7 @@ const handleAddRecord = () => {
     v-model="visible"
     v-if="visible"
     title="评分卡数据源分类"
-    width="80%"
+    width="70%"
     append-to-body
     @closed="handleClosed"
     @vue:mounted="handleMount"
@@ -211,6 +250,7 @@ const handleAddRecord = () => {
               v-model="item.value"
               placeholder="选择数据源"
               class="w-full"
+              :disabled="props.canEdit"
             >
               <ElOption
                 v-for="source in dataSourceList"
@@ -221,12 +261,17 @@ const handleAddRecord = () => {
             </ElSelect>
 
             <div class="trial-row">
-              <ElButton type="primary" @click="handleAddRule(gIdx)">
+              <ElButton
+                type="primary"
+                @click="handleAddRule(gIdx)"
+                :disabled="props.canEdit"
+              >
                 新增
               </ElButton>
               <ElInput
                 v-model="item.trialValue"
                 placeholder="试算值"
+                :disabled="props.canEdit"
                 class="trial-input"
               />
             </div>
@@ -242,25 +287,35 @@ const handleAddRecord = () => {
                 v-model="rule.cond"
                 placeholder="运算符"
                 style="width: 150px"
+                :disabled="props.canEdit"
               >
-                <ElOption label=">" value=">" />
-                <ElOption label="<" value="<" />
-                <ElOption label="=" value="=" />
+                <ElOption
+                  v-for="option in dataCategoryConditionOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
               </ElSelect>
 
               <ElInput
                 v-model="rule.threshold"
                 placeholder="阈值"
                 style="width: 120px"
+                :disabled="props.canEdit"
               />
 
               <ElInput
                 v-model="rule.res"
                 placeholder="分值"
                 style="width: 120px"
+                :disabled="props.canEdit"
               />
 
-              <ElButton type="danger" @click="handleDeleteRule(gIdx, rIdx)">
+              <ElButton
+                type="danger"
+                @click="handleDeleteRule(gIdx, rIdx)"
+                :disabled="props.canEdit"
+              >
                 删除
               </ElButton>
             </div>
@@ -269,7 +324,9 @@ const handleAddRecord = () => {
       </div>
 
       <div>
-        <ElButton type="info" @click="handleAddRecord"> 添加数据源 </ElButton>
+        <ElButton type="info" @click="handleAddRecord" v-if="!props.canEdit">
+          添加数据源
+        </ElButton>
       </div>
 
       <div class="scoring-method-section">
@@ -278,6 +335,7 @@ const handleAddRecord = () => {
           v-model="scoringMethod"
           placeholder="计分方式"
           style="width: 160px"
+          :disabled="props.canEdit"
         >
           <ElOption label="累加" value="sum" />
           <ElOption label="平均" value="avg" />
@@ -287,6 +345,7 @@ const handleAddRecord = () => {
           v-model="baseScore"
           placeholder="基础评分"
           style="width: 160px"
+          :disabled="props.canEdit"
         />
       </div>
     </div>
