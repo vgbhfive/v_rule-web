@@ -16,7 +16,11 @@ import {
   ElSelect,
 } from 'element-plus';
 
-import { getDataCategoryConditionTypes, getValueTypes } from '#/api/enums';
+import {
+  getCategoryScoringTypes,
+  getDataCategoryConditionTypes,
+  getValueTypes,
+} from '#/api/enums';
 
 const props = defineProps<{
   calcOtherData: DataCategoryCalcDetail[];
@@ -49,6 +53,7 @@ const allValueOptions = ref<{ label: string; value: string }[]>([]);
 const dataCategoryConditionOptions = ref<{ label: string; value: string }[]>(
   [],
 );
+const scoringOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
   // 阈值类型
@@ -66,6 +71,13 @@ onMounted(async () => {
       value: item.value,
     }),
   );
+
+  // 计分方式
+  const scoringList = await getCategoryScoringTypes();
+  scoringOptions.value = scoringList.map((item) => ({
+    label: item.name,
+    value: item.type,
+  }));
 });
 
 const handleMount = () => {
@@ -337,8 +349,12 @@ const handleAddRecord = () => {
           style="width: 160px"
           :disabled="props.canEdit"
         >
-          <ElOption label="累加" value="sum" />
-          <ElOption label="平均" value="avg" />
+          <ElOption
+            v-for="option in scoringOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
         </ElSelect>
         <span>基础评分</span>
         <ElInput

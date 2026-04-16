@@ -38,6 +38,16 @@ export async function getCategoryTypes() {
 }
 
 /**
+ * 获取评分卡数据源分类计分方式类型
+ * @returns
+ */
+export async function getCategoryScoringTypes() {
+  return requestClient.get<{ name: string; type: string }[]>(
+    '/enum/categoryScoringType',
+  );
+}
+
+/**
  * 获取规则条件类型下拉列表
  * @returns
  */
