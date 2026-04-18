@@ -744,6 +744,24 @@ function handleDrawerClose(done: () => void) {
       </template>
 
       <EditForm @submit="handleSaveEdit" @reset="handleCancelEdit" />
+
+      <!-- 规则树编辑 -->
+      <div class="tree-panel"></div>
+      <div class="panel-title">
+        规则树逻辑配置
+        <ElButton type="primary" size="small" style="margin-left: 12px">
+          初始化根节点
+        </ElButton>
+      </div>
     </ElDrawer>
   </Page>
 </template>
+
+<style scoped>
+.tree-panel {
+  width: 100%;
+  height: 1px;
+  margin: 20px 0; /* 上下间距，根据需要调整 */
+  background-color: #ebeef5; /* Element Plus 默认边框色 */
+}
+</style>

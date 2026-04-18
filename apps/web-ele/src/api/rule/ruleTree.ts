@@ -2,6 +2,15 @@ import type { Recordable } from '@vben/types';
 
 import { requestClient } from '#/api/request';
 
+export interface RuleTreeDetailNode {
+  index: number;
+  preIndex: number;
+  nodeType: 'operator' | 'rule';
+  combine?: string;
+  ruleType?: string;
+  ruleNo?: string;
+}
+
 export interface RuleTreeInfo {
   id: number;
   lineNo: string;
@@ -13,6 +22,8 @@ export interface RuleTreeInfo {
   version: number;
   isValid: number;
   createAt: string;
+  deployAt?: string;
+  detailEntityList?: RuleTreeDetailNode[];
 }
 
 export interface RuleTreeParams {
@@ -28,7 +39,6 @@ export interface RuleTreeParams {
 export async function getRuleTreeList(params: Recordable<any>) {
   return requestClient.post<RuleTreeInfo[]>('/rule_tree/list', params);
 }
-
 
 /**
  * 新增规则树
@@ -59,8 +69,8 @@ export async function updateRuleTreeValid(params: Recordable<any>) {
 
 /**
  * 获取规则树详情
- * @param id 
- * @returns 
+ * @param id
+ * @returns
  */
 export async function getRuleTreeDetail(id: number) {
   return requestClient.post<RuleTreeInfo>(`/rule_tree/detail/${id}`);
@@ -77,4 +87,3 @@ export async function getRuleTreeDropdownList(params: Recordable<any>) {
     params,
   );
 }
-
