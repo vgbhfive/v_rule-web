@@ -13,11 +13,12 @@ const props = defineProps<{
   readonly?: boolean;
   ruleOptions: { label: string; value: string }[];
   ruleSetOptions: { label: string; value: string }[];
+  ruleTreeOptions: { label: string; value: string }[];
   ruleTypeOptions: { label: string; value: string }[];
 }>();
 
 const emit = defineEmits<{
-  add: [preIndex: number, type: string];
+  add: [preIndex: number, type: number];
   remove: [index: number];
 }>();
 
@@ -25,11 +26,12 @@ const children = computed(() =>
   props.allNodes.filter((n) => n.preIndex === props.node.index),
 );
 
-const isOperator = computed(() => props.node.nodeType === 'operator');
+const isOperator = computed(() => props.node.nodeType === 0);
 
 const currentRuleOptions = computed(() => {
   if (props.node.ruleType === 'rule') return props.ruleOptions;
   if (props.node.ruleType === 'rule_set') return props.ruleSetOptions;
+  if (props.node.ruleType === 'rule_tree') return props.ruleTreeOptions;
   return [];
 });
 </script>
@@ -123,7 +125,7 @@ const currentRuleOptions = computed(() => {
           size="small"
           type="primary"
           plain
-          @click="emit('add', node.index, 'operator')"
+          @click="emit('add', node.index, 0)"
         >
           + 逻辑节点
         </ElButton>
@@ -131,7 +133,7 @@ const currentRuleOptions = computed(() => {
           size="small"
           type="success"
           plain
-          @click="emit('add', node.index, 'rule')"
+          @click="emit('add', node.index, 1)"
         >
           + 规则节点
         </ElButton>
@@ -151,6 +153,7 @@ const currentRuleOptions = computed(() => {
             :combine-type-options="combineTypeOptions"
             :rule-options="ruleOptions"
             :rule-set-options="ruleSetOptions"
+            :rule-tree-options="ruleTreeOptions"
             @add="(pIdx, t) => emit('add', pIdx, t)"
             @remove="(idx) => emit('remove', idx)"
           />

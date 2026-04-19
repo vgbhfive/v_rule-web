@@ -13,16 +13,3 @@ export const VGBHFIVE_DOC_URL = 'https://truerule.github.io/v_rule-doc/#/';
  */
 export const VBEN_LOGO_URL =
   'https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp';
-
-/**
- * @zh_CN Vben Admin 首页地址
- */
-export const VBEN_PREVIEW_URL = 'https://www.vben.pro';
-
-export const VBEN_ELE_PREVIEW_URL = 'https://ele.vben.pro';
-
-export const VBEN_NAIVE_PREVIEW_URL = 'https://naive.vben.pro';
-
-export const VBEN_ANT_PREVIEW_URL = 'https://ant.vben.pro';
-
-export const VBEN_TD_PREVIEW_URL = 'https://tdesign.vben.pro';

@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 import { ProfilePasswordSetting, z } from '@vben/common-ui';
 
 import { useAuthStore } from '#/store';
-
-const profilePasswordSettingRef = ref();
 
 const authStore = useAuthStore();
 

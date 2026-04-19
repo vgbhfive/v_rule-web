@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { RuleTreeInfo, RuleTreeParams } from '#/api/rule/ruleTree';
+import type { RuleTreeInfo, RuleTreeParams, RuleTreeDetailNode } from '#/api/rule/ruleTree';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -20,10 +20,15 @@ import {
 import {
   createRuleTree,
   getRuleTreeList,
+  getRuleTreeDetail,
+  getRuleTreeDropdownList,
   updateRuleTree,
   updateRuleTreeValid,
 } from '#/api/rule/ruleTree';
 import { getLineDropdownList } from '#/api/system';
+
+import TreeDetailDialog from './treeDetailDialog.vue';
+import { getRuleDropdownList, getRuleSetDropdownList } from '#/api/rule';
 
 const { hasAccessByCodes } = useAccess();
 
@@ -35,6 +40,7 @@ const conditionTypeOptions = ref<{ label: string; value: string }[]>([]);
 const resultTypeOptions = ref<{ label: string; value: string }[]>([]);
 const insertRuleOptions = ref<{ label: string; value: string }[]>([]);
 const insertRuleSetOptions = ref<{ label: string; value: string }[]>([]);
+const insertRuleTreeOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
   const list = await getLineDropdownList();
@@ -279,11 +285,10 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridEvents, gridOptions });
 const editDrawerVisible = ref(false);
 const currentEditing = ref<null | RuleTreeInfo>(null);
 const drawerTitle = ref('');
-const firstNoOptions = ref<{ label: string; value: string }[]>([]);
-const secondNoOptions = ref<{ label: string; value: string }[]>([]);
 const preLineNo = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
+const isInfo = ref(false);
 
 // 新增/编辑/详情表单配置
 const [EditForm, editFormApi] = useVbenForm({
@@ -293,7 +298,6 @@ const [EditForm, editFormApi] = useVbenForm({
       class: 'w-full',
     },
   },
-  handleValuesChange,
   handleReset: handleResetEdit,
   handleSubmit: handleSaveEdit,
   layout: 'vertical',
@@ -388,12 +392,14 @@ const [EditForm, editFormApi] = useVbenForm({
 });
 
 // 详情
-function handleInfo(row: RuleTreeInfo) {
+async function handleInfo(row: RuleTreeInfo) {
   drawerTitle.value = '规则树详情';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
+  const detail = await getRuleTreeDetail(row.id);
+  currentEditing.value.detailEntityList = detail.detailEntityList || [];
   editFormApi.setValues(row);
   // 设置全部字段不可编辑
   editFormApi.updateSchema([
@@ -404,43 +410,13 @@ function handleInfo(row: RuleTreeInfo) {
       },
     },
     {
-      fieldName: 'ruleSetName',
+      fieldName: 'ruleTreeName',
       componentProps: {
         disabled: true,
       },
     },
     {
-      fieldName: 'ruleSetNo',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'firstType',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'firstNo',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'combine',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'secondType',
-      componentProps: {
-        disabled: true,
-      },
-    },
-    {
-      fieldName: 'secondNo',
+      fieldName: 'ruleTreeNo',
       componentProps: {
         disabled: true,
       },
@@ -472,6 +448,9 @@ function handleInfo(row: RuleTreeInfo) {
   ]);
   // 设置操作按钮不可见
   editFormApi.setState({ showDefaultActions: false });
+  isAdd.value = false;
+  isEdit.value = false;
+  isInfo.value = true;
   editDrawerVisible.value = true;
 }
 
@@ -530,16 +509,19 @@ function handleAdd() {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = true;
   isEdit.value = false;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
 // 编辑
-function handleEdit(row: RuleTreeInfo) {
+async function handleEdit(row: RuleTreeInfo) {
   drawerTitle.value = '编辑规则树';
   currentEditing.value = row;
   // 重置表单以清除之前的校验状态
   editFormApi.resetForm();
   // 填充表单数据
+  const detail = await getRuleTreeDetail(row.id);
+  currentEditing.value.detailEntityList = detail.detailEntityList || [];
   editFormApi.setValues(row);
   // 设置部分字段不可编辑
   editFormApi.updateSchema([
@@ -560,6 +542,7 @@ function handleEdit(row: RuleTreeInfo) {
       componentProps: {
         disabled: true,
       },
+      hide: false,
     },
     {
       fieldName: 'cond',
@@ -590,6 +573,7 @@ function handleEdit(row: RuleTreeInfo) {
   editFormApi.setState({ showDefaultActions: true });
   isAdd.value = false;
   isEdit.value = true;
+  isInfo.value = false;
   editDrawerVisible.value = true;
 }
 
@@ -621,11 +605,6 @@ async function handleInvalid(row: RuleTreeInfo) {
   }
 }
 
-// 值变化
-async function handleValuesChange(values: any) {
-  console.log(values);
-}
-
 // 保存
 async function handleSaveEdit(values: any) {
   try {
@@ -637,7 +616,7 @@ async function handleSaveEdit(values: any) {
         threshold: values.threshold,
         result: values.result,
         isValid: values.isValid,
-        detailEntityList: [],
+        detailEntityList: localNodes.value,
       };
 
       const resp = await createRuleTree(insertData);
@@ -656,7 +635,7 @@ async function handleSaveEdit(values: any) {
         isValid: values.isValid,
         version: currentEditing.value?.version,
         createAt: currentEditing.value?.createAt,
-        detailEntityList: [],
+        detailEntityList: localNodes.value,
       };
 
       const resp = await updateRuleTree(updateData);
@@ -675,8 +654,8 @@ async function handleSaveEdit(values: any) {
     isAdd.value = false;
     isEdit.value = false;
   } catch (error) {
-    ElMessage.error('规则集操作失败');
-    console.error('规则集操作失败:', error);
+    ElMessage.error('规则树操作失败');
+    console.error('规则树操作失败:', error);
   }
 }
 
@@ -687,7 +666,6 @@ function handleResetEdit() {
   }
   if (isEdit.value) {
     editFormApi.setValues(currentEditing.value || {});
-    handleValuesChange(currentEditing.value);
   }
 }
 
@@ -698,6 +676,7 @@ function handleCancelEdit() {
   preLineNo.value = '';
   isAdd.value = false;
   isEdit.value = false;
+  isInfo.value = false;
   editFormApi.resetForm();
 }
 
@@ -706,10 +685,60 @@ function handleDrawerClose(done: () => void) {
   handleCancelEdit();
   done();
 }
+
+const localNodes = ref<RuleTreeDetailNode[]>([]);
+const treeDetailVisible = ref(false);
+
+// 规则树详情
+async function initRuleTreeDetail() {
+  const values = await editFormApi.getValues();
+  if (values.lineNo) {
+    // 规则
+    const ruleList = await getRuleDropdownList({ lineNo: values.lineNo });
+    insertRuleOptions.value = ruleList.map(item => ({
+      label: item.key,
+      value: item.value,
+    }));
+    // 规则集
+    const ruleSetList = await getRuleSetDropdownList({ lineNo: values.lineNo });
+    insertRuleSetOptions.value = ruleSetList.map(item => ({
+      label: item.key,
+      value: item.value,
+    }));
+    // 规则树
+    const ruleTreeList = await getRuleTreeDropdownList({ lineNo: values.lineNo });
+    insertRuleTreeOptions.value = ruleTreeList.map(item => ({
+      label: item.key,
+      value: item.value,
+    }));
+
+    treeDetailVisible.value = true;
+  } else {
+    ElMessage.warning('请先填写业务线名称');
+  }
+
+  if (isAdd.value) {
+    localNodes.value = [
+      {
+        index: 1,
+        preIndex: 0,
+        nodeType: 0,
+        combine: 'AND',
+        ruleType: '',
+        ruleNo: '',
+      },
+    ];
+  }
+  if (isEdit.value || isInfo.value) {
+    localNodes.value = currentEditing.value?.detailEntityList || [];
+  }
+  
+}
+
 </script>
 
 <template>
-  <Page description="规则集管理">
+  <Page description="规则树管理">
     <div>
       <div class="w-full">
         <QueryForm />
@@ -749,11 +778,26 @@ function handleDrawerClose(done: () => void) {
       <div class="tree-panel"></div>
       <div class="panel-title">
         规则树逻辑配置
-        <ElButton type="primary" size="small" style="margin-left: 12px">
-          初始化根节点
+        <ElButton type="primary" size="small" style="margin-left: 20px" @click="initRuleTreeDetail">
+          {{ isAdd.valueOf() ? '初始化根节点' : '规则树节点详情' }}
         </ElButton>
       </div>
     </ElDrawer>
+
+    <!-- 规则树详情弹窗 -->
+    <TreeDetailDialog 
+      v-model="treeDetailVisible"
+      :canEdit="isInfo"
+      :combineTypeOptions="combineTypeOptions"
+      :conditionTypeOptions="conditionTypeOptions"
+      :localNodes="localNodes"
+      :ruleTypeOptions="ruleTypeOptions"
+      :ruleOptions="insertRuleOptions"
+      :ruleSetOptions="insertRuleSetOptions"
+      :ruleTreeOptions="insertRuleTreeOptions"
+      @update:localNodes="localNodes = $event"
+      @update:modelValue="treeDetailVisible = $event"
+    />
   </Page>
 </template>
 
@@ -761,7 +805,7 @@ function handleDrawerClose(done: () => void) {
 .tree-panel {
   width: 100%;
   height: 1px;
-  margin: 20px 0; /* 上下间距，根据需要调整 */
+  margin: 10px 0; /* 上下间距，根据需要调整 */
   background-color: #ebeef5; /* Element Plus 默认边框色 */
 }
 </style>

@@ -5,7 +5,7 @@ import { requestClient } from '#/api/request';
 export interface RuleTreeDetailNode {
   index: number;
   preIndex: number;
-  nodeType: 'operator' | 'rule';
+  nodeType: number;
   combine?: string;
   ruleType?: string;
   ruleNo?: string;

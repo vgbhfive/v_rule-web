@@ -7,6 +7,7 @@ import { useUserStore } from '@vben/stores';
 import ProfileBase from './base-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import ProfileSecuritySetting from './security-setting.vue';
+import ProfileAuthorInfo from './author-info.vue';
 
 const userStore = useUserStore();
 
@@ -25,6 +26,10 @@ const tabs = ref([
     label: '修改密码',
     value: 'password',
   },
+  {
+    label: '作者信息',
+    value: 'author',
+  },
 ]);
 </script>
 <template>
@@ -38,6 +43,7 @@ const tabs = ref([
       <ProfileBase v-if="tabsValue === 'basic'" />
       <ProfileSecuritySetting v-if="tabsValue === 'security'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
+      <ProfileAuthorInfo v-if="tabsValue === 'author'" />
     </template>
   </Profile>
 </template>
