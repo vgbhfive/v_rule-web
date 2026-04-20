@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
-import type { RuleTreeInfo, RuleTreeParams, RuleTreeDetailNode } from '#/api/rule/ruleTree';
+import type {
+  RuleTreeDetailNode,
+  RuleTreeInfo,
+  RuleTreeParams,
+} from '#/api/rule/ruleTree';
 
 import { h, onMounted, ref } from 'vue';
 
@@ -17,18 +21,18 @@ import {
   getRuleSetConditionTypes,
   getRuleTypes,
 } from '#/api/enums';
+import { getRuleDropdownList, getRuleSetDropdownList } from '#/api/rule';
 import {
   createRuleTree,
-  getRuleTreeList,
   getRuleTreeDetail,
   getRuleTreeDropdownList,
+  getRuleTreeList,
   updateRuleTree,
   updateRuleTreeValid,
 } from '#/api/rule/ruleTree';
 import { getLineDropdownList } from '#/api/system';
 
 import TreeDetailDialog from './treeDetailDialog.vue';
-import { getRuleDropdownList, getRuleSetDropdownList } from '#/api/rule';
 
 const { hasAccessByCodes } = useAccess();
 
@@ -695,19 +699,21 @@ async function initRuleTreeDetail() {
   if (values.lineNo) {
     // 规则
     const ruleList = await getRuleDropdownList({ lineNo: values.lineNo });
-    insertRuleOptions.value = ruleList.map(item => ({
+    insertRuleOptions.value = ruleList.map((item) => ({
       label: item.key,
       value: item.value,
     }));
     // 规则集
     const ruleSetList = await getRuleSetDropdownList({ lineNo: values.lineNo });
-    insertRuleSetOptions.value = ruleSetList.map(item => ({
+    insertRuleSetOptions.value = ruleSetList.map((item) => ({
       label: item.key,
       value: item.value,
     }));
     // 规则树
-    const ruleTreeList = await getRuleTreeDropdownList({ lineNo: values.lineNo });
-    insertRuleTreeOptions.value = ruleTreeList.map(item => ({
+    const ruleTreeList = await getRuleTreeDropdownList({
+      lineNo: values.lineNo,
+    });
+    insertRuleTreeOptions.value = ruleTreeList.map((item) => ({
       label: item.key,
       value: item.value,
     }));
@@ -732,9 +738,7 @@ async function initRuleTreeDetail() {
   if (isEdit.value || isInfo.value) {
     localNodes.value = currentEditing.value?.detailEntityList || [];
   }
-  
 }
-
 </script>
 
 <template>
@@ -778,25 +782,30 @@ async function initRuleTreeDetail() {
       <div class="tree-panel"></div>
       <div class="panel-title">
         规则树逻辑配置
-        <ElButton type="primary" size="small" style="margin-left: 20px" @click="initRuleTreeDetail">
+        <ElButton
+          type="primary"
+          size="small"
+          style="margin-left: 20px"
+          @click="initRuleTreeDetail"
+        >
           {{ isAdd.valueOf() ? '初始化根节点' : '规则树节点详情' }}
         </ElButton>
       </div>
     </ElDrawer>
 
     <!-- 规则树详情弹窗 -->
-    <TreeDetailDialog 
+    <TreeDetailDialog
       v-model="treeDetailVisible"
-      :canEdit="isInfo"
-      :combineTypeOptions="combineTypeOptions"
-      :conditionTypeOptions="conditionTypeOptions"
-      :localNodes="localNodes"
-      :ruleTypeOptions="ruleTypeOptions"
-      :ruleOptions="insertRuleOptions"
-      :ruleSetOptions="insertRuleSetOptions"
-      :ruleTreeOptions="insertRuleTreeOptions"
-      @update:localNodes="localNodes = $event"
-      @update:modelValue="treeDetailVisible = $event"
+      :can-edit="isInfo"
+      :combine-type-options="combineTypeOptions"
+      :condition-type-options="conditionTypeOptions"
+      :local-nodes="localNodes"
+      :rule-type-options="ruleTypeOptions"
+      :rule-options="insertRuleOptions"
+      :rule-set-options="insertRuleSetOptions"
+      :rule-tree-options="insertRuleTreeOptions"
+      @update:local-nodes="localNodes = $event"
+      @update:model-value="treeDetailVisible = $event"
     />
   </Page>
 </template>

@@ -293,7 +293,9 @@ const isInfo = ref(false);
 const sceneDropdownListOptions = ref<{ label: string; value: string }[]>([]);
 const strategyDropdownListOptions = ref<{ label: string; value: string }[]>([]);
 const limitProductOptions = ref<{ label: string; value: string }[]>([]);
+const dynamicLimitProductOptions = ref<{ label: string; value: string }[]>([]);
 const periodProductOptions = ref<{ label: string; value: string }[]>([]);
+const dynamicPeriodProductOptions = ref<{ label: string; value: string }[]>([]);
 const interestProductOptions = ref<{ label: string; value: string }[]>([]);
 const customProductOptions = ref<{ label: string; value: string }[]>([]);
 
@@ -395,6 +397,17 @@ const [EditForm, editFormApi] = useVbenForm({
     {
       component: 'ApiSelect',
       componentProps: {
+        options: dynamicLimitProductOptions,
+        placeholder: '请选择动态额度产品',
+        disabled: true,
+        clearable: true,
+      },
+      fieldName: 'dynamicLimitProductNo',
+      label: '动态额度产品',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
         options: periodProductOptions,
         placeholder: '请选择账期产品',
         disabled: true,
@@ -402,6 +415,17 @@ const [EditForm, editFormApi] = useVbenForm({
       },
       fieldName: 'periodProductNo',
       label: '账期产品',
+    },
+    {
+      component: 'ApiSelect',
+      componentProps: {
+        options: dynamicPeriodProductOptions,
+        placeholder: '请选择动态账期产品',
+        disabled: true,
+        clearable: true,
+      },
+      fieldName: 'dynamicPeriodProductNo',
+      label: '动态账期产品',
     },
     {
       component: 'ApiSelect',
@@ -475,6 +499,14 @@ async function handleInfo(row: DivideInfo) {
           values.customProductNo = item.productNo;
           break;
         }
+        case 'dynamic_limit': {
+          values.dynamicLimitProductNo = item.productNo;
+          break;
+        }
+        case 'dynamic_period': {
+          values.dynamicPeriodProductNo = item.productNo;
+          break;
+        }
         case 'interest': {
           values.interestProductNo = item.productNo;
           break;
@@ -543,7 +575,19 @@ async function handleInfo(row: DivideInfo) {
       },
     },
     {
+      fieldName: 'dynamicLimitProductNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
       fieldName: 'periodProductNo',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
+      fieldName: 'dynamicPeriodProductNo',
       componentProps: {
         disabled: true,
       },
@@ -632,7 +676,19 @@ function handleAdd() {
       },
     },
     {
+      fieldName: 'dynamicLimitProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
       fieldName: 'periodProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'dynamicPeriodProductNo',
       componentProps: {
         disabled: false,
       },
@@ -684,6 +740,14 @@ async function handleEdit(row: DivideInfo) {
       switch (item.type) {
         case 'custom': {
           values.customProductNo = item.productNo;
+          break;
+        }
+        case 'dynamic_limit': {
+          values.dynamicLimitProductNo = item.productNo;
+          break;
+        }
+        case 'dynamic_period': {
+          values.dynamicPeriodProductNo = item.productNo;
           break;
         }
         case 'interest': {
@@ -754,7 +818,19 @@ async function handleEdit(row: DivideInfo) {
       },
     },
     {
+      fieldName: 'dynamicLimitProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
       fieldName: 'periodProductNo',
+      componentProps: {
+        disabled: false,
+      },
+    },
+    {
+      fieldName: 'dynamicPeriodProductNo',
       componentProps: {
         disabled: false,
       },
@@ -950,6 +1026,20 @@ async function handleValuesChange(values: any) {
         value: item.value,
       }));
 
+      // 动态额度
+      const dynamicLimitData = {
+        lineNo: values.lineNo,
+        type: 'dynamic_limit',
+      };
+      const dynamicLimitDropdownList =
+        await getProductDropdownList(dynamicLimitData);
+      dynamicLimitProductOptions.value = dynamicLimitDropdownList.map(
+        (item) => ({
+          label: item.key,
+          value: item.value,
+        }),
+      );
+
       // 账期
       const periodData = {
         lineNo: values.lineNo,
@@ -960,6 +1050,20 @@ async function handleValuesChange(values: any) {
         label: item.key,
         value: item.value,
       }));
+
+      // 动态账期
+      const dynamicPeriodData = {
+        lineNo: values.lineNo,
+        type: 'dynamic_period',
+      };
+      const dynamicPeriodDropdownList =
+        await getProductDropdownList(dynamicPeriodData);
+      dynamicPeriodProductOptions.value = dynamicPeriodDropdownList.map(
+        (item) => ({
+          label: item.key,
+          value: item.value,
+        }),
+      );
 
       // 利率
       const interestData = {
@@ -1023,6 +1127,18 @@ async function handleValuesChange(values: any) {
       value: item.value,
     }));
 
+    // 动态额度
+    const dynamicLimitData = {
+      lineNo: currentEditing.value?.lineNo,
+      type: 'dynamic_limit',
+    };
+    const dynamicLimitDropdownList =
+      await getProductDropdownList(dynamicLimitData);
+    dynamicLimitProductOptions.value = dynamicLimitDropdownList.map((item) => ({
+      label: item.key,
+      value: item.value,
+    }));
+
     // 账期
     const periodData = {
       lineNo: currentEditing.value?.lineNo,
@@ -1033,6 +1149,20 @@ async function handleValuesChange(values: any) {
       label: item.key,
       value: item.value,
     }));
+
+    // 动态账期
+    const dynamicPeriodData = {
+      lineNo: values.lineNo,
+      type: 'dynamic_period',
+    };
+    const dynamicPeriodDropdownList =
+      await getProductDropdownList(dynamicPeriodData);
+    dynamicPeriodProductOptions.value = dynamicPeriodDropdownList.map(
+      (item) => ({
+        label: item.key,
+        value: item.value,
+      }),
+    );
 
     // 利率
     const interestData = {

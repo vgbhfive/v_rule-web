@@ -21,6 +21,7 @@ import {
 } from '#/api/strategy';
 import { getLineDropdownList } from '#/api/system';
 import { useAccess } from '@vben/access';
+import { getRuleTreeDropdownList } from '#/api/rule/ruleTree';
 
 const { hasAccessByCodes } = useAccess();
 
@@ -590,6 +591,7 @@ async function handleValuesChange(values: any) {
     };
     const ruleList = await getRuleDropdownList(data);
     const ruleSetList = await getRuleSetDropdownList(data);
+    const ruleTreeList = await getRuleTreeDropdownList(data);
     const ruleOptionTmp = ruleList.map((item) => ({
       label: `规则 - ${item.key}`,
       value: `rule-${item.value}`,
@@ -598,7 +600,11 @@ async function handleValuesChange(values: any) {
       label: `规则集 - ${item.key}`,
       value: `rule_set-${item.value}`,
     }));
-    ruleOptions.value = [...ruleOptionTmp, ...ruleSetOptionTmp];
+    const ruleTreeOptionTmp = ruleTreeList.map((item) => ({
+      label: `规则树 - ${item.key}`,
+      value: `rule_tree-${item.value}`,
+    }));
+    ruleOptions.value = [...ruleOptionTmp, ...ruleSetOptionTmp, ...ruleTreeOptionTmp];
 
     preLineNo.value = values.lineNo;
   }

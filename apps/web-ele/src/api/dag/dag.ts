@@ -7,8 +7,8 @@ export interface DagInfoParams {
 
 /**
  * 获取场景DAG信息
- * @returns 
+ * @returns
  */
-async function getSceneDagInfo(param: DagInfoParams) {
+export async function getSceneDagInfo(param: DagInfoParams) {
   return requestClient.post('/dag/info', param);
 }

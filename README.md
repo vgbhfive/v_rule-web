@@ -47,7 +47,7 @@
    - 专属模型、特征开发
 
 ### 文档
-[Doc](https://truerule.github.io/v_rule-doc/#/)
+[Doc](https://doc.vrule.cn)
 
  > 默认用户名/密码 -> admin/v_rule
 

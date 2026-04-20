@@ -8,20 +8,20 @@ import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import RuleNode from './RuleNode.vue';
 
 const props = defineProps<{
-  modelValue: boolean;
   canEdit: boolean;
   combineTypeOptions: { label: string; value: string }[];
   conditionTypeOptions: { label: string; value: string }[];
   localNodes: RuleTreeDetailNode[];
-  ruleTypeOptions: { label: string; value: string }[];
+  modelValue: boolean;
   ruleOptions: { label: string; value: string }[];
   ruleSetOptions: { label: string; value: string }[];
   ruleTreeOptions: { label: string; value: string }[];
+  ruleTypeOptions: { label: string; value: string }[];
 }>();
 
 const emit = defineEmits<{
-  'update:modelValue': [val: boolean];
   'update:localNodes': [val: RuleTreeDetailNode[]];
+  'update:modelValue': [val: boolean];
 }>();
 
 const visible = computed({
@@ -59,21 +59,24 @@ function handleRemoveNode(index: number) {
     }
   };
   findChildren(index);
-  emit('update:localNodes', props.localNodes.filter((n) => !idsToRemove.has(n.index)));
+  emit(
+    'update:localNodes',
+    props.localNodes.filter((n) => !idsToRemove.has(n.index)),
+  );
 }
 
 /**
  * 校验数据结构有效性
  * @param {Array} data - 包含该数据结构的数组
- * @returns {Object} - { isValid: boolean, errors: Array }
+ * @returns {object} - { isValid: boolean, errors: Array }
  */
 function validateNodeStructure(data: RuleTreeDetailNode[]) {
-  const errors: { index: number; error: string; row: number }[] = [];
+  const errors: { error: string; index: number; row: number }[] = [];
   const childCountMap: Record<number, number> = {};
 
   // 1. 统计每个节点的子节点数量
   // 这里的 preIndex 指向父节点的 index
-  data.forEach(item => {
+  data.forEach((item) => {
     const parentId = item.preIndex;
     if (parentId !== undefined && parentId !== null) {
       childCountMap[parentId] = (childCountMap[parentId] || 0) + 1;
@@ -84,12 +87,11 @@ function validateNodeStructure(data: RuleTreeDetailNode[]) {
   data.forEach((item, i) => {
     if (item.nodeType === 0) {
       const childrenCount = childCountMap[item.index] || 0;
-      
       if (childrenCount < 2) {
         errors.push({
           index: item.index,
           error: `节点(index:${item.index}) 所属子节点仅有 ${childrenCount} 条（需 ≥ 2条）`,
-          row: i
+          row: i,
         });
       }
     }
@@ -97,7 +99,7 @@ function validateNodeStructure(data: RuleTreeDetailNode[]) {
 
   return {
     isValid: errors.length === 0,
-    errors: errors
+    errors,
   };
 }
 
@@ -111,7 +113,9 @@ const handleClose = () => {
 async function handleSave() {
   const result = validateNodeStructure(props.localNodes);
   if (!result.isValid) {
-    ElMessage.error(`规则树结构不符合要求！${result.errors.map(e => e.error).join('；')}`);
+    ElMessage.error(
+      `规则树结构不符合要求！${result.errors.map((e) => e.error).join('；')}`,
+    );
     return;
   }
   emit('update:localNodes', props.localNodes);
@@ -151,9 +155,7 @@ async function handleSave() {
 
     <template #footer v-if="!props.canEdit">
       <ElButton @click="handleClose">取消</ElButton>
-      <ElButton type="primary" @click="handleSave">
-        提交  
-      </ElButton>
+      <ElButton type="primary" @click="handleSave"> 提交 </ElButton>
     </template>
   </ElDialog>
 </template>
