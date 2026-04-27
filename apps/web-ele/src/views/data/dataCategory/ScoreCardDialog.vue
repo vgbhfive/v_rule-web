@@ -55,6 +55,22 @@ const dataCategoryConditionOptions = ref<{ label: string; value: string }[]>(
 );
 const scoringOptions = ref<{ label: string; value: string }[]>([]);
 
+/**
+ * 核心响应式数据结构
+ * configList: 对应 UI 中多个“选择数据源”区块
+ */
+const configList = ref([
+  {
+    valueType: 'dataSource',
+    value: '', // 选中的数据源
+    trialValue: '', // 试算值
+    rules: [
+      // 该数据源下的评分规则列表
+      { cond: '', threshold: '', res: '' },
+    ],
+  },
+]);
+
 onMounted(async () => {
   // 阈值类型
   const valueList = await getValueTypes();
@@ -167,6 +183,7 @@ const generateScoreCardInfo = () => {
 const handleTrial = () => {
   // 清空其他数据
   emit('update:other-data', []);
+  emit('update:calc-other-data', []);
   const ret = generateScoreCardInfo();
   if (ret === 1) {
     return;
@@ -188,22 +205,6 @@ const handleConfirm = () => {
   emit('confirm', comment.value);
   isTrial.value = false;
 };
-
-/**
- * 核心响应式数据结构
- * configList: 对应 UI 中多个“选择数据源”区块
- */
-const configList = ref([
-  {
-    valueType: 'dataSource',
-    value: '', // 选中的数据源
-    trialValue: '', // 试算值
-    rules: [
-      // 该数据源下的评分规则列表
-      { cond: '', threshold: '', res: '' },
-    ],
-  },
-]);
 
 // 计分方式
 const scoringMethod = ref('');

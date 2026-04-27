@@ -901,10 +901,22 @@ async function handleSaveEdit(values: any) {
           type: 'limit',
         });
       }
+      if (values.dynamicLimitProductNo) {
+        productEntityList.push({
+          productNo: values.dynamicLimitProductNo,
+          type: 'dynamic_limit',
+        });
+      }
       if (values.periodProductNo) {
         productEntityList.push({
           productNo: values.periodProductNo,
           type: 'period',
+        });
+      }
+      if (values.dynamicPeriodProductNo) {
+        productEntityList.push({
+          productNo: values.dynamicPeriodProductNo,
+          type: 'dynamic_period',
         });
       }
       if (values.interestProductNo) {
@@ -941,10 +953,22 @@ async function handleSaveEdit(values: any) {
           type: 'limit',
         });
       }
+      if (values.dynamicLimitProductNo) {
+        productEntityList.push({
+          productNo: values.dynamicLimitProductNo,
+          type: 'dynamic_limit',
+        });
+      }
       if (values.periodProductNo) {
         productEntityList.push({
           productNo: values.periodProductNo,
           type: 'period',
+        });
+      }
+      if (values.dynamicPeriodProductNo) {
+        productEntityList.push({
+          productNo: values.dynamicPeriodProductNo,
+          type: 'dynamic_period',
         });
       }
       if (values.interestProductNo) {

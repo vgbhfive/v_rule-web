@@ -12,7 +12,7 @@ import { ElButton, ElDrawer, ElMessage } from 'element-plus';
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDataSourceDropdownList } from '#/api/data';
-import { getInterestUnitTypes, getValueTypes } from '#/api/enums';
+import { getPeriodTypes, getValueTypes } from '#/api/enums';
 import {
   createDynamicPeriod,
   getDynamicPeriodList,
@@ -28,8 +28,8 @@ const lineOptions = ref<{ label: string; value: string }[]>([]);
 const dataSourceMap = ref<Record<string, string>>({});
 const allValueMap = ref<Record<string, string>>({});
 const allValueOptions = ref<{ label: string; value: string }[]>([]);
-const unitMap = ref<Record<string, string>>({});
-const unitOptions = ref<{ label: string; value: string }[]>([]);
+const periodTypeMap = ref<Record<string, string>>({});
+const periodTypeOptions = ref<{ label: string; value: string }[]>([]);
 
 onMounted(async () => {
   const list = await getLineDropdownList();
@@ -63,14 +63,14 @@ onMounted(async () => {
     value: item.type,
   }));
 
-  // 利率单位类型
-  const unitList = await getInterestUnitTypes();
-  const newUnitMap: Record<string, string> = {};
-  for (const item of unitList) {
-    newUnitMap[item.type] = item.name;
+  // 账期类型
+  const periodList = await getPeriodTypes();
+  const newPeriodMap: Record<string, string> = {};
+  for (const item of periodList) {
+    newPeriodMap[item.type] = item.name;
   }
-  unitMap.value = newUnitMap;
-  unitOptions.value = unitList.map((item) => ({
+  periodTypeMap.value = newPeriodMap;
+  periodTypeOptions.value = periodList.map((item) => ({
     label: item.name,
     value: item.type,
   }));
@@ -186,6 +186,14 @@ const gridOptions: VxeGridProps<DynamicPeriodInfo> = {
       slots: {
         default: ({ row }: { row: DynamicPeriodInfo }) =>
           dataSourceMap.value[row.periodStep] || row.periodStep,
+      },
+    },
+    {
+      field: 'periodType',
+      title: '单位',
+      slots: {
+        default: ({ row }: { row: DynamicPeriodInfo }) =>
+          periodTypeMap.value[row.periodType] || row.periodType,
       },
     },
     { field: 'remark', title: '备注', width: 130 },
@@ -446,6 +454,17 @@ const [EditForm, editFormApi] = useVbenForm({
       rules: 'required',
     },
     {
+      component: 'ApiSelect',
+      componentProps: {
+        options: periodTypeOptions,
+        placeholder: '请输入值单位',
+        disabled: true,
+      },
+      fieldName: 'periodType',
+      label: '账期类型',
+      rules: 'required',
+    },
+    {
       component: 'Input',
       componentProps: {
         type: 'textarea',
@@ -606,6 +625,12 @@ async function handleInfo(row: DynamicPeriodInfo) {
       hide: !(row.periodStepType === 'dataSource'),
     },
     {
+      fieldName: 'periodType',
+      componentProps: {
+        disabled: true,
+      },
+    },
+    {
       fieldName: 'remark',
       componentProps: {
         disabled: true,
@@ -708,6 +733,12 @@ function handleAdd() {
         disabled: false,
       },
       hide: true,
+    },
+    {
+      fieldName: 'periodType',
+      componentProps: {
+        disabled: false,
+      },
     },
     {
       fieldName: 'remark',
@@ -846,6 +877,12 @@ async function handleEdit(row: DynamicPeriodInfo) {
         disabled: false,
       },
       hide: !(row.periodStepType === 'dataSource'),
+    },
+    {
+      fieldName: 'periodType',
+      componentProps: {
+        disabled: false,
+      },
     },
     {
       fieldName: 'remark',
@@ -1116,6 +1153,7 @@ async function handleSaveEdit(values: any) {
           values.stepValueType === 'fixed'
             ? values.stepValueFixed
             : values.stepValueDataSource,
+        periodType: values.periodType,
         remark: values.remark,
         isValid: values.isValid,
       };
@@ -1145,6 +1183,7 @@ async function handleSaveEdit(values: any) {
           values.stepValueType === 'fixed'
             ? values.stepValueFixed
             : values.stepValueDataSource,
+        periodType: values.periodType,
         remark: values.remark,
         version: currentEditing.value?.version,
         isValid: values.isValid,

@@ -20,6 +20,7 @@ export interface DynamicPeriodInfo {
   endPeriod: string;
   periodStepType: string;
   periodStep: string;
+  periodType: string;
   remark: string;
   version: number;
   isValid: number;
