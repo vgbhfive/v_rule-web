@@ -103,3 +103,21 @@ export async function getDataCategoryDropdownList(param: Recordable<any>) {
 export async function dataCategoryTrial(param: Recordable<any>) {
   return requestClient.post('/dataCategory/trial', param);
 }
+
+/**
+ * 获取本地表数据源分类的数据表列表
+ * @param param
+ * @returns
+ */
+export async function dataCategoryLocalTableList(param: Recordable<any>) {
+  return requestClient.post('/dataCategory/local/table/tables', param);
+}
+
+/**
+ * 获取本地表数据源分类的数据表字段列表
+ * @param params
+ * @returns
+ */
+export async function dataCategoryLocalTableColumns(params: Recordable<any>) {
+  return requestClient.post('/dataCategory/local/table/columns', params);
+}

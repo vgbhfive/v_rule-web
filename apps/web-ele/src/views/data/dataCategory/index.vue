@@ -29,6 +29,7 @@ import { getCategoryTypes } from '#/api/enums';
 import { getLineDropdownList } from '#/api/system';
 
 import HttpDialog from './HttpDialog.vue';
+import LocalTableDialog from './LocalTableDialog.vue';
 import PythonDialog from './PythonDialog.vue';
 import ScoreCardDialog from './ScoreCardDialog.vue';
 
@@ -784,6 +785,14 @@ async function handleValueChange(values: any) {
     // ScoreCard
     scoreCardVisible.value = true;
   }
+  if (
+    values.categoryType &&
+    values.categoryType === 4 &&
+    values.categoryType !== preCategoryType.value
+  ) {
+    // LocalTable
+    localTableVisible.value = true;
+  }
   if (values.lineNo && preLineNo.value !== values.lineNo) {
     // 数据源
     const queryParams = { lineNo: values.lineNo };
@@ -830,6 +839,7 @@ function handleDrawerClose(done: () => void) {
 const pythonVisible = ref(false);
 const httpVisible = ref(false);
 const scoreCardVisible = ref(false);
+const localTableVisible = ref(false);
 const detailData = ref<DataCategoryDetail[]>([]);
 const detailOtherData = ref<DataCategoryDetail[]>([]);
 const detailCalcOtherData = ref<DataCategoryCalcDetail[]>([]);
@@ -850,13 +860,15 @@ async function handleTrial() {
   if (editData?.categoryType === 3 && editData?.sourceFrom !== 'scoreCard') {
     ElMessage.warning('评分卡数据源分类的一级来源必须为【scoreCard】');
   }
+  if (editData?.categoryType === 4 && editData?.sourceFrom !== 'localTable') {
+    ElMessage.warning('本地表数据源分类的一级来源必须为【localTable】');
+  }
   const data = {
     detailList: [...detailData.value, ...detailOtherData.value],
     lineNo: editData.lineNo,
     sourceFrom: editData.sourceFrom,
     detailCalcList: detailCalcOtherData.value,
   };
-  console.log(data);
   const resp = await dataCategoryTrial(data);
   ElMessage.success({ message: resp, duration: 5000 });
 }
@@ -874,6 +886,11 @@ async function handleHttpConfirm() {
 // ScoreCard数据源分类提交
 async function handleScoreCardConfirm() {
   scoreCardVisible.value = false;
+}
+
+// LocalTable数据源分类提交
+async function handleLocalTableConfirm() {
+  localTableVisible.value = false;
 }
 </script>
 
@@ -953,6 +970,19 @@ async function handleScoreCardConfirm() {
       @update:other-data="detailOtherData = $event"
       @update:calc-other-data="detailCalcOtherData = $event"
       @confirm="handleScoreCardConfirm"
+      @trial="handleTrial"
+    />
+
+    <!-- 本地表数据源分类 -->
+    <LocalTableDialog
+      v-model="localTableVisible"
+      :data="detailData"
+      :other-data="detailOtherData"
+      :data-source-list="allDataSourceOptions"
+      :can-edit="isInfo"
+      @update:data="detailData = $event"
+      @update:other-data="detailOtherData = $event"
+      @confirm="handleLocalTableConfirm"
       @trial="handleTrial"
     />
   </Page>
