@@ -5,19 +5,25 @@ import { computed, onMounted, ref } from 'vue';
 
 import {
   ElButton,
+  ElCol,
   ElDialog,
+  ElForm,
   ElFormItem,
   ElOption,
+  ElRow,
   ElSelect,
 } from 'element-plus';
 
+import { dataCategoryLocalTableColumns } from '#/api/data';
 import { getValueTypes } from '#/api/enums';
 
 const props = defineProps<{
   canEdit: boolean;
   data: DataCategoryDetail[];
   dataSourceList: { label: string; value: string }[];
+  lineTableList: { label: string; value: string }[];
   modelValue: boolean;
+  nowLineNo: string;
   otherData: DataCategoryDetail[];
 }>();
 
@@ -37,10 +43,6 @@ const visible = computed({
 const comment = ref('');
 const isTrial = ref(false);
 const allValueOptions = ref<{ label: string; value: string }[]>([]);
-const requestUrl = ref('');
-const requestType = ref('');
-const requestStatusField = ref('');
-const requestStatusCode = ref('');
 
 onMounted(async () => {
   // 阈值类型
@@ -54,25 +56,29 @@ onMounted(async () => {
 const handleMount = () => {
   props.otherData.forEach((item) => {
     switch (item.key) {
-      case 'requestStatusCode': {
-        requestStatusCode.value = item.value;
+      case 'index': {
+        formData.value.index = item.value;
         break;
       }
-      case 'requestStatusField': {
-        requestStatusField.value = item.value;
+      case 'indexDataSource': {
+        formData.value.dataSource = item.value;
         break;
       }
-      case 'requestType': {
-        requestType.value = item.value;
+      case 'tableName': {
+        formData.value.tableName = item.value;
         break;
       }
-      case 'requestUrl': {
-        requestUrl.value = item.value;
-        break;
-      }
-      // No default
     }
   });
+  const fields: string[] = [];
+  props.data.forEach((item) => {
+    fields.push(item.key);
+  });
+  formData.value.fields = fields;
+  lineNo.value = props.nowLineNo;
+  if (lineNo.value && formData.value.tableName) {
+    updateIndexFields();
+  }
 };
 
 // 关闭
@@ -84,54 +90,76 @@ const handleClosed = () => {
 
 const generateLocalTableInfo = () => {
   const url: DataCategoryDetail = {
-    key: 'requestUrl',
+    key: 'tableName',
     valueType: 'fixed',
-    value: requestUrl.value,
-    trialValue: requestUrl.value,
+    value: formData.value.tableName,
+    trialValue: formData.value.tableName,
   };
   const type: DataCategoryDetail = {
-    key: 'requestType',
+    key: 'index',
     valueType: 'fixed',
-    value: requestType.value,
-    trialValue: requestType.value,
+    value: formData.value.index,
+    trialValue: formData.value.index,
   };
   const field: DataCategoryDetail = {
-    key: 'requestStatusField',
-    valueType: 'fixed',
-    value: requestStatusField.value,
-    trialValue: requestStatusField.value,
+    key: 'indexDataSource',
+    valueType: 'dataSource',
+    value: formData.value.dataSource,
+    trialValue: formData.value.dataSource,
   };
-  const code: DataCategoryDetail = {
-    key: 'requestStatusCode',
-    valueType: 'fixed',
-    value: requestStatusCode.value,
-    trialValue: requestStatusCode.value,
-  };
-  emit('update:other-data', [url, type, field, code]);
+  const fieldList: DataCategoryDetail[] = formData.value.fields.map(
+    (fieldValue) => {
+      return {
+        key: fieldValue,
+        valueType: 'fixed',
+        value: fieldValue,
+        trialValue: fieldValue,
+      };
+    },
+  );
+  emit('update:other-data', [url, type, field, ...fieldList]);
 };
 
 // 提交
 const handleConfirm = () => {
+  // 清空其他数据
+  emit('update:other-data', []);
+  emit('update:data', []);
   generateLocalTableInfo();
   emit('confirm', comment.value);
   isTrial.value = false;
 };
 
 // 表单数据结构
-const formData = reactive({
+const formData = ref({
   tableName: '',
-  indexName: '',
+  index: '',
+  dataSource: '',
   fields: [''], // 初始默认一个空字段
 });
+const lineNo = ref('');
+const fieldList = ref<{ label: string; value: string }[]>([]);
 
 // 添加字段逻辑
 const addField = () => {
-  formData.fields.push('');
+  formData.value.fields.push('');
 };
 
 // 删除字段逻辑
 const removeField = (index) => {
-  formData.fields.splice(index, 1);
+  formData.value.fields.splice(index, 1);
+};
+
+// 更新索引字段和查询字段
+const updateIndexFields = async () => {
+  const fields = await dataCategoryLocalTableColumns({
+    lineNo: lineNo.value,
+    tableName: formData.value.tableName,
+  });
+  fieldList.value = fields.map((item) => ({
+    label: item.columnName,
+    value: item.columnName,
+  }));
 };
 </script>
 
@@ -139,57 +167,90 @@ const removeField = (index) => {
   <ElDialog
     v-model="visible"
     v-if="visible"
-    title="本地表"
+    title="本地表数据源分类"
     width="80%"
     append-to-body
     @closed="handleClosed"
     @vue:mounted="handleMount"
   >
     <div>
-      <el-form :model="formData" label-width="80px" label-position="left">
+      <ElForm :model="formData" label-width="80px" label-position="left">
         <ElFormItem label="数据表">
           <ElSelect
             v-model="formData.tableName"
             placeholder="请选择数据表"
-            class="w-full"
+            @change="updateIndexFields"
+            :disabled="props.canEdit"
           >
-            <ElOption label="用户表 (users)" value="users" />
-            <ElOption label="订单表 (orders)" value="orders" />
+            <ElOption
+              v-for="source in lineTableList"
+              :key="source.value"
+              :label="source.label"
+              :value="source.value"
+            />
           </ElSelect>
         </ElFormItem>
 
-        <ElFormItem label="索引">
-          <ElSelect
-            v-model="formData.indexName"
-            placeholder="请选择索引字段"
-            class="w-full"
-          >
-            <ElOption label="主键索引" value="primary" />
-            <ElOption label="唯一索引" value="unique" />
-          </ElSelect>
-        </ElFormItem>
+        <ElRow :gutter="20">
+          <ElCol :span="12">
+            <ElFormItem label="索引">
+              <ElSelect
+                v-model="formData.index"
+                placeholder="请选择索引字段"
+                :disabled="props.canEdit"
+              >
+                <ElOption
+                  v-for="source in fieldList"
+                  :key="source.value"
+                  :label="source.label"
+                  :value="source.value"
+                />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
+          <ElCol :span="12">
+            <ElFormItem label="对应数据源" label-width="100px">
+              <ElSelect
+                v-model="formData.dataSource"
+                placeholder="请选择数据源"
+                :disabled="props.canEdit"
+              >
+                <ElOption
+                  v-for="source in dataSourceList"
+                  :key="source.value"
+                  :label="source.label"
+                  :value="source.value"
+                />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
 
         <div
           v-for="(field, index) in formData.fields"
           :key="index"
-          class="field-row"
+          class="field-item"
         >
           <ElFormItem :label="index === 0 ? '字段' : ''">
-            <div class="flex w-full gap-2">
+            <div class="field-row-content">
               <ElSelect
                 v-model="formData.fields[index]"
-                placeholder="请选择查询字段"
-                class="flex-1"
+                placeholder="请选择字段"
+                class="field-select"
+                :disabled="props.canEdit"
               >
-                <ElOption label="ID" value="id" />
-                <ElOption label="创建时间" value="created_at" />
-                <ElOption label="用户名" value="username" />
+                <ElOption
+                  v-for="source in fieldList"
+                  :key="source.value"
+                  :label="source.label"
+                  :value="source.value"
+                />
               </ElSelect>
               <ElButton
-                v-if="formData.fields.length > 1"
+                v-if="formData.fields.length > 0"
                 type="danger"
-                link
                 @click="removeField(index)"
+                :disabled="props.canEdit"
               >
                 删除
               </ElButton>
@@ -198,12 +259,11 @@ const removeField = (index) => {
         </div>
 
         <ElFormItem>
-          <ElButton @click="addField" class="add-btn">
-            <el-icon class="mr-1"><Plus /></el-icon>
-            添加字段
+          <ElButton @click="addField" type="primary" :disabled="props.canEdit">
+            + 添加字段
           </ElButton>
         </ElFormItem>
-      </el-form>
+      </ElForm>
     </div>
 
     <template #footer v-if="!props.canEdit">
@@ -217,6 +277,11 @@ const removeField = (index) => {
 <style scoped>
 .w-full {
   width: 100%;
+}
+
+.field-select {
+  flex: 1;
+  width: 40%;
 }
 
 .flex {
@@ -235,16 +300,16 @@ const removeField = (index) => {
   margin-right: 4px;
 }
 
-/* 匹配图片中的按钮样式 */
-.add-btn {
-  padding: 8px 16px;
-  color: #303133;
-  border: 1px solid #303133;
-  border-radius: 4px;
-}
-
 /* 调整字段行间距，使其紧凑 */
 .field-row :deep(.el-form-item) {
   margin-bottom: 12px;
+}
+
+/* 1. 基础布局：删除按钮紧跟选择框 */
+.field-row-content {
+  display: flex;
+  gap: 12px; /* 间距 */
+  align-items: center;
+  width: 100%;
 }
 </style>

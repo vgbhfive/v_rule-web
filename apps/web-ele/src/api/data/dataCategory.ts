@@ -110,7 +110,7 @@ export async function dataCategoryTrial(param: Recordable<any>) {
  * @returns
  */
 export async function dataCategoryLocalTableList(param: Recordable<any>) {
-  return requestClient.post('/dataCategory/local/table/tables', param);
+  return requestClient.post<any[]>('/dataCategory/local/table/tables', param);
 }
 
 /**
@@ -119,5 +119,5 @@ export async function dataCategoryLocalTableList(param: Recordable<any>) {
  * @returns
  */
 export async function dataCategoryLocalTableColumns(params: Recordable<any>) {
-  return requestClient.post('/dataCategory/local/table/columns', params);
+  return requestClient.post<any[]>('/dataCategory/local/table/columns', params);
 }

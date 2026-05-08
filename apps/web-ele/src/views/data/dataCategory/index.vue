@@ -18,6 +18,7 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createDataCategory,
+  dataCategoryLocalTableList,
   dataCategoryTrial,
   getDataCategoryDetail,
   getDataCategoryList,
@@ -278,6 +279,8 @@ const drawerTitle = ref('');
 const preLineNo = ref('');
 const preCategoryType = ref('');
 const allDataSourceOptions = ref<{ label: string; value: string }[]>([]);
+const lineTableList = ref<{ label: string; value: string }[]>([]);
+const nowLineNo = ref('');
 const isAdd = ref(false);
 const isEdit = ref(false);
 const isInfo = ref(false);
@@ -432,6 +435,22 @@ async function handleInfo(row: DataCategoryInfo) {
     const detail = await getDataCategoryDetail(row.id);
     detail.detailList.forEach((item) => {
       if (item.key === 'baseScore' || item.key === 'scoringMethod') {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
+    detailCalcOtherData.value = detail.detailCalcList;
+  }
+  if (row.categoryType === 4) {
+    // 本地表数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detail.detailList.forEach((item) => {
+      if (
+        item.key === 'tableName' ||
+        item.key === 'index' ||
+        item.key === 'indexDataSource'
+      ) {
         detailOtherData.value.push(item);
       } else {
         detailData.value.push(item);
@@ -609,6 +628,23 @@ async function handleEdit(row: DataCategoryInfo) {
         detailData.value.push(item);
       }
     });
+    detailCalcOtherData.value = detail.detailCalcList;
+  }
+  if (row.categoryType === 4) {
+    // 本地表数据源分类
+    const detail = await getDataCategoryDetail(row.id);
+    detail.detailList.forEach((item) => {
+      if (
+        item.key === 'tableName' ||
+        item.key === 'index' ||
+        item.key === 'indexDataSource'
+      ) {
+        detailOtherData.value.push(item);
+      } else {
+        detailData.value.push(item);
+      }
+    });
+    nowLineNo.value = row.lineNo;
     detailCalcOtherData.value = detail.detailCalcList;
   }
   editFormApi.setValues(row);
@@ -792,6 +828,14 @@ async function handleValueChange(values: any) {
   ) {
     // LocalTable
     localTableVisible.value = true;
+    nowLineNo.value = values.lineNo;
+    const tableList = await dataCategoryLocalTableList({
+      lineNo: values.lineNo,
+    });
+    lineTableList.value = tableList.map((item) => ({
+      label: item.tableName,
+      value: item.tableName,
+    }));
   }
   if (values.lineNo && preLineNo.value !== values.lineNo) {
     // 数据源
@@ -979,7 +1023,9 @@ async function handleLocalTableConfirm() {
       :data="detailData"
       :other-data="detailOtherData"
       :data-source-list="allDataSourceOptions"
+      :line-table-list="lineTableList"
       :can-edit="isInfo"
+      :now-line-no="nowLineNo"
       @update:data="detailData = $event"
       @update:other-data="detailOtherData = $event"
       @confirm="handleLocalTableConfirm"
